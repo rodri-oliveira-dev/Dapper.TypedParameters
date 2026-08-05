@@ -1,5 +1,5 @@
-Last completed prompt: 001
-Last expected commit: build: target net8.0 and net10.0
+Last completed prompt: 002
+Last expected commit: ci: validate net8.0 and net10.0
 Current status: Completed
-Next prompt: 002-ci-net8-net10
+Next prompt: 003-dapper-sqlserver-integration-tests
 Required TFMs: net8.0;net10.0

@@ -8,9 +8,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
+  validate:
+    name: Validate ${{ matrix.framework }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        framework:
+          - net8.0
+          - net10.0
 
     steps:
       - name: Checkout
@@ -19,16 +32,45 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 10.0.302
+          dotnet-version: |
+            8.0.x
+            10.0.302
 
       - name: Restore
         run: dotnet restore Dapper.TypedParameters.sln
 
       - name: Build
-        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
+        run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test Dapper.TypedParameters.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+
+  pack:
+    name: Pack NuGet artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Restore
+        run: dotnet restore Dapper.TypedParameters.sln
 
       - name: Pack
-        run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
+        run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-restore --output artifacts/packages
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error

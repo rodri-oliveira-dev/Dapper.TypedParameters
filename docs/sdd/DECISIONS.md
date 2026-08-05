@@ -15,3 +15,5 @@
    - `nvarchar` e `nchar`: tamanho declarado de 1 a 4.000;
    - tipos `max`: `Size = -1`.
 10. Nenhum pacote provider-neutral `Core` ou `Abstractions` sera criado neste momento.
+11. A CI valida `net8.0` e `net10.0` em matriz explicita antes do empacotamento.
+12. O pacote NuGet gerado pela CI e retido apenas como artefato `.nupkg`; nao ha publicacao automatica.
