@@ -1,0 +1,32 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+
+# Test output
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# IDEs
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <AssemblyName>Dapper.TypedParameters.SqlServer</AssemblyName>
+    <RootNamespace>Dapper.TypedParameters.SqlServer</RootNamespace>
+    <PackageId>Dapper.TypedParameters.SqlServer</PackageId>
+    <Title>Dapper Typed Parameters for SQL Server</Title>
+    <Description>Explicit SQL Server parameter types for Dapper using Microsoft.Data.SqlClient.</Description>
+    <PackageTags>dapper;sql-server;sqlclient;ado.net;parameters;micro-orm</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>preview.1</VersionSuffix>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>

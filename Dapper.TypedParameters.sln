@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.SqlServer", "src\Dapper.TypedParameters.SqlServer\Dapper.TypedParameters.SqlServer.csproj", "{84193908-B945-49A1-A2A5-0C4B02D7538B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.SqlServer.Tests", "tests\Dapper.TypedParameters.SqlServer.Tests\Dapper.TypedParameters.SqlServer.Tests.csproj", "{2322E1C4-56A0-40C2-8A4E-9D4D6A8C6107}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{84193908-B945-49A1-A2A5-0C4B02D7538B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84193908-B945-49A1-A2A5-0C4B02D7538B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84193908-B945-49A1-A2A5-0C4B02D7538B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84193908-B945-49A1-A2A5-0C4B02D7538B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2322E1C4-56A0-40C2-8A4E-9D4D6A8C6107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2322E1C4-56A0-40C2-8A4E-9D4D6A8C6107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2322E1C4-56A0-40C2-8A4E-9D4D6A8C6107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2322E1C4-56A0-40C2-8A4E-9D4D6A8C6107}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

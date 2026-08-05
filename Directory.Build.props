@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <RepositoryUrl>https://github.com/rodri-oliveira-dev/Dapper.TypedParameters</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors>Rodrigo de Oliveira</Authors>
+    <Copyright>Copyright © 2026 Rodrigo de Oliveira</Copyright>
+  </PropertyGroup>
+</Project>
