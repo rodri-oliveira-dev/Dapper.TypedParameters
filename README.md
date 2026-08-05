@@ -18,8 +18,8 @@ The repository is currently in its bootstrap phase. No production API has been r
 
 - Dapper 2.1.79
 - Microsoft.Data.SqlClient 7.0.2
-- .NET Standard 2.0
 - .NET 8
+- .NET 10
 
 ## Repository structure
 
