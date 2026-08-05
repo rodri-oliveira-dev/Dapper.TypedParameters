@@ -36,7 +36,50 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
     /// <inheritdoc />
     public void AddParameter(IDbCommand command, string name)
     {
-        throw new NotImplementedException(
-            "SQL Server parameter materialization will be implemented in the next development step.");
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException(
+                "Parameter name cannot be null, empty, or whitespace.",
+                nameof(name));
+        }
+
+        if (command is not SqlCommand sqlCommand)
+        {
+            throw new NotSupportedException(
+                $"{nameof(TypedSqlParameter)} requires a " +
+                $"{typeof(SqlCommand).FullName}. " +
+                $"The received command type was {command.GetType().FullName}.");
+        }
+
+        var parameter = GetOrCreateParameter(sqlCommand, name);
+
+        parameter.Value = Value ?? DBNull.Value;
+        parameter.SqlDbType = SqlDbType;
+
+        if (Size.HasValue)
+        {
+            parameter.Size = Size.Value;
+        }
+    }
+
+    private static SqlParameter GetOrCreateParameter(
+        SqlCommand command,
+        string name)
+    {
+        if (command.Parameters.Contains(name))
+        {
+            return command.Parameters[name];
+        }
+
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        command.Parameters.Add(parameter);
+
+        return parameter;
     }
 }
