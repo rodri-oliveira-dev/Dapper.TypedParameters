@@ -14,6 +14,8 @@ Declarar o tipo correto do parametro nao promete eliminar todas as conversoes im
 
 Para parametros numericos, o pacote tambem evita que precisao e escala de `decimal` fiquem implicitas no ponto de chamada. A biblioteca nao arredonda valores; conversoes validas continuam sob responsabilidade de `Microsoft.Data.SqlClient` e do SQL Server.
 
+Para parametros binarios e identificadores, o pacote declara `uniqueidentifier`, `binary`, `varbinary` e `varbinary(max)` sem copiar arrays, inferir tamanho a partir do valor ou transformar arrays vazios em `null`.
+
 ## Compatibilidade
 
 | Item | Suporte |
@@ -66,6 +68,10 @@ SqlParam.Float(value)
 SqlParam.Decimal(value, precision, scale)
 SqlParam.Money(value)
 SqlParam.SmallMoney(value)
+SqlParam.UniqueIdentifier(value)
+SqlParam.Binary(value, size)
+SqlParam.VarBinary(value, size)
+SqlParam.VarBinaryMax(value)
 ```
 
 Todos os metodos retornam um parametro que o Dapper consome como `SqlMapper.ICustomQueryParameter`.
@@ -340,6 +346,40 @@ public static class NumericWhereExample
 }
 ```
 
+### Parametros binarios e identificadores
+
+```csharp
+using System;
+using System.Threading.Tasks;
+using Dapper;
+using Dapper.TypedParameters.SqlServer;
+using Microsoft.Data.SqlClient;
+
+public static class BinaryExample
+{
+    public static async Task<int> SaveFileAsync(
+        string connectionString,
+        Guid fileId,
+        byte[] checksum,
+        byte[] payload)
+    {
+        await using var connection = new SqlConnection(connectionString);
+
+        return await connection.ExecuteAsync(
+            """
+            INSERT INTO dbo.Files (FileId, Checksum, Payload)
+            VALUES (@FileId, @Checksum, @Payload);
+            """,
+            new
+            {
+                FileId = SqlParam.UniqueIdentifier(fileId),
+                Checksum = SqlParam.Binary(checksum, 32),
+                Payload = SqlParam.VarBinaryMax(payload)
+            });
+    }
+}
+```
+
 ## Limites
 
 | Tipo SQL Server | Tamanho aceito |
@@ -348,6 +388,9 @@ public static class NumericWhereExample
 | `nvarchar` / `nchar` | 1 a 4.000 unidades declaradas |
 | `varchar(max)` | Use `SqlParam.VarCharMax(value)` |
 | `nvarchar(max)` | Use `SqlParam.NVarCharMax(value)` |
+| `binary` | 1 a 8.000 bytes declarados |
+| `varbinary` | 1 a 8.000 bytes declarados |
+| `varbinary(max)` | Use `SqlParam.VarBinaryMax(value)` |
 
 Para `varchar` e `char`, o tamanho declarado pode representar bytes, nao uma equivalencia universal com quantidade de caracteres. A relacao entre bytes e caracteres depende dos dados e da configuracao do SQL Server.
 
@@ -372,6 +415,17 @@ Tipos numericos e booleanos suportados:
 
 Nao ha factory `SqlParam.Numeric`: no SQL Server, `numeric` e sinonimo de `decimal`. Tambem nao ha overload generico como `SqlParam.Number<T>`, porque a API exige declaracao explicita do tipo SQL Server.
 
+Tipos binarios e identificadores suportados:
+
+| Tipo SQL Server | Factory |
+| --- | --- |
+| `uniqueidentifier` | `SqlParam.UniqueIdentifier(value)` |
+| `binary` | `SqlParam.Binary(value, size)` |
+| `varbinary` | `SqlParam.VarBinary(value, size)` |
+| `varbinary(max)` | `SqlParam.VarBinaryMax(value)` |
+
+`SqlParam.Binary` e `SqlParam.VarBinary` aceitam `size` de 1 a 8.000. `SqlParam.VarBinaryMax` configura `Size = -1`. Arrays vazios sao preservados como arrays vazios; somente `null` e convertido para `DBNull.Value` quando o parametro e materializado. A biblioteca nao copia arrays, nao valida `value.Length <= size` e nao trunca conteudo.
+
 ## Tratamento de null
 
 Ao criar o `SqlParameter`, `null` e convertido para `DBNull.Value`. Isso acontece quando o Dapper aplica o parametro ao comando SQL Server.
@@ -383,10 +437,13 @@ Ao criar o `SqlParameter`, `null` e convertido para `DBNull.Value`. Isso acontec
 - Nao detecta automaticamente `CONVERT_IMPLICIT`.
 - Nao altera SQL.
 - Nao trata listas `IN`.
+- Nao oferece `image`, `rowversion`, `timestamp` ou `filestream` nesta versao.
 - Nao oferece output parameters nesta versao.
 - Nao oferece TVPs nesta versao.
 - Nao oferece outros providers nesta versao.
 - Nao valida se o conteudo cabe em bytes no tamanho declarado.
+
+`rowversion` e `timestamp` nao sao tipos de entrada comuns e estao fora do escopo atual.
 
 ## Testes e build
 
@@ -404,8 +461,6 @@ Os testes de integracao usam SQL Server real em container por meio de `Testconta
 
 Itens planejados como trabalho futuro, sem API publica nesta versao:
 
-- Tipos numericos.
-- Tipos binarios.
 - Datas e horarios.
 - Output parameters.
 - TVPs.

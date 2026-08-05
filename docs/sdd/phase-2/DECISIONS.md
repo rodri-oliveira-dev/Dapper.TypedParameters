@@ -12,3 +12,6 @@
 8. No provider-neutral abstraction will be created in this phase.
 9. SQL Server `numeric` is a synonym of `decimal`; the phase will expose `SqlParam.Decimal` and will not add a separate `SqlParam.Numeric` factory.
 10. Generic numeric overloads such as `SqlParam.Number<T>` are not part of the API.
+11. Binary factories preserve the supplied `byte[]` reference and do not validate value length against declared size.
+12. `varbinary(max)` is represented by `SqlDbType.VarBinary` with `Size = -1`.
+13. `image`, `rowversion`, `timestamp`, and `filestream` are outside the binary parameter scope; `rowversion` and `timestamp` are not common input parameter types.

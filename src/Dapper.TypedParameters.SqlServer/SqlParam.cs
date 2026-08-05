@@ -8,6 +8,7 @@ namespace Dapper.TypedParameters.SqlServer;
 public static class SqlParam
 {
     private const int MaxAnsiLength = 8_000;
+    private const int MaxBinaryLength = 8_000;
     private const int MaxUnicodeLength = 4_000;
     private const byte MaxDecimalPrecision = 38;
 
@@ -132,6 +133,30 @@ public static class SqlParam
     public static TypedSqlParameter SmallMoney(decimal? value) =>
         new(value, SqlDbType.SmallMoney);
 
+    /// <summary>
+    /// Creates a SQL Server <c>uniqueidentifier</c> parameter.
+    /// </summary>
+    public static TypedSqlParameter UniqueIdentifier(Guid? value) =>
+        new(value, SqlDbType.UniqueIdentifier);
+
+    /// <summary>
+    /// Creates a SQL Server <c>binary</c> parameter.
+    /// </summary>
+    public static TypedSqlParameter Binary(byte[]? value, int size) =>
+        CreateBinary(value, SqlDbType.Binary, size);
+
+    /// <summary>
+    /// Creates a SQL Server <c>varbinary</c> parameter.
+    /// </summary>
+    public static TypedSqlParameter VarBinary(byte[]? value, int size) =>
+        CreateBinary(value, SqlDbType.VarBinary, size);
+
+    /// <summary>
+    /// Creates a SQL Server <c>varbinary(max)</c> parameter.
+    /// </summary>
+    public static TypedSqlParameter VarBinaryMax(byte[]? value) =>
+        new(value, SqlDbType.VarBinary, size: -1);
+
     private static TypedSqlParameter CreateString(
         string? value,
         SqlDbType sqlDbType,
@@ -144,6 +169,22 @@ public static class SqlParam
                 nameof(size),
                 size,
                 $"Size must be between 1 and {maximumSize}.");
+        }
+
+        return new TypedSqlParameter(value, sqlDbType, size);
+    }
+
+    private static TypedSqlParameter CreateBinary(
+        byte[]? value,
+        SqlDbType sqlDbType,
+        int size)
+    {
+        if (size <= 0 || size > MaxBinaryLength)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(size),
+                size,
+                $"Size must be between 1 and {MaxBinaryLength}.");
         }
 
         return new TypedSqlParameter(value, sqlDbType, size);

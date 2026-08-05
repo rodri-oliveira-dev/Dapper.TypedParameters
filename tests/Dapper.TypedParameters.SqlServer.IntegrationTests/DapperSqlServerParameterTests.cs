@@ -475,6 +475,204 @@ public sealed class DapperSqlServerParameterTests
         }
     }
 
+    [Fact]
+    public async Task QueryAsync_uses_binary_and_identifier_parameters_with_declared_sql_types()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        BinaryBaseTypes result = await connection.QuerySingleAsync<BinaryBaseTypes>(
+            """
+            SELECT
+                CONVERT(nvarchar(128), SQL_VARIANT_PROPERTY(@Id, 'BaseType')) AS Id,
+                CONVERT(nvarchar(128), SQL_VARIANT_PROPERTY(@FixedPayload, 'BaseType')) AS FixedPayload,
+                CONVERT(nvarchar(128), SQL_VARIANT_PROPERTY(@VariablePayload, 'BaseType')) AS VariablePayload;
+            """,
+            new
+            {
+                Id = SqlParam.UniqueIdentifier(Guid.Parse("51343455-bc4a-44e0-a08c-82e615f78b8e")),
+                FixedPayload = SqlParam.Binary([0x01, 0x02, 0x03], 3),
+                VariablePayload = SqlParam.VarBinary([0x04, 0x05], 8)
+            });
+
+        Assert.Equal("uniqueidentifier", result.Id);
+        Assert.Equal("binary", result.FixedPayload);
+        Assert.Equal("varbinary", result.VariablePayload);
+    }
+
+    [Fact]
+    public async Task QueryAsync_round_trips_binary_and_identifier_values()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        var id = Guid.Parse("59b6b6bf-6067-4148-bc04-77ca8f0d2ef5");
+        byte[] fixedPayload = [0x01, 0x02, 0x03];
+        byte[] variablePayload = [0x04, 0x05, 0x06, 0x07];
+
+        BinaryRoundTripResult result = await connection.QuerySingleAsync<BinaryRoundTripResult>(
+            """
+            SELECT
+                CAST(@Id AS uniqueidentifier) AS Id,
+                CAST(@FixedPayload AS binary(3)) AS FixedPayload,
+                CAST(@VariablePayload AS varbinary(4)) AS VariablePayload;
+            """,
+            new
+            {
+                Id = SqlParam.UniqueIdentifier(id),
+                FixedPayload = SqlParam.Binary(fixedPayload, 3),
+                VariablePayload = SqlParam.VarBinary(variablePayload, 4)
+            });
+
+        Assert.Equal(id, result.Id);
+        Assert.Equal(fixedPayload, result.FixedPayload);
+        Assert.Equal(variablePayload, result.VariablePayload);
+    }
+
+    [Fact]
+    public async Task QueryAsync_sends_binary_and_identifier_null_values_as_database_null()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        BinaryNullResult result = await connection.QuerySingleAsync<BinaryNullResult>(
+            """
+            SELECT
+                CONVERT(bit, CASE WHEN @Id IS NULL THEN 1 ELSE 0 END) AS IdIsNull,
+                CONVERT(bit, CASE WHEN @Payload IS NULL THEN 1 ELSE 0 END) AS PayloadIsNull;
+            """,
+            new
+            {
+                Id = SqlParam.UniqueIdentifier(null),
+                Payload = SqlParam.VarBinary(null, 8)
+            });
+
+        Assert.True(result.IdIsNull);
+        Assert.True(result.PayloadIsNull);
+    }
+
+    [Fact]
+    public async Task QueryAsync_preserves_empty_varbinary_array()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        BinaryPayloadResult result = await connection.QuerySingleAsync<BinaryPayloadResult>(
+            """
+            SELECT
+                CONVERT(int, DATALENGTH(CAST(@Payload AS varbinary(8)))) AS Length,
+                CAST(@Payload AS varbinary(8)) AS Payload;
+            """,
+            new
+            {
+                Payload = SqlParam.VarBinary([], 8)
+            });
+
+        Assert.Equal(0, result.Length);
+        Assert.Empty(result.Payload);
+    }
+
+    [Fact]
+    public async Task QueryAsync_uses_varbinary_max_parameter()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        byte[] payload = Enumerable
+            .Range(0, 8_100)
+            .Select(value => (byte)(value % 256))
+            .ToArray();
+
+        BinaryPayloadResult result = await connection.QuerySingleAsync<BinaryPayloadResult>(
+            """
+            SELECT
+                CONVERT(int, DATALENGTH(CAST(@Payload AS varbinary(max)))) AS Length,
+                CAST(@Payload AS varbinary(max)) AS Payload;
+            """,
+            new
+            {
+                Payload = SqlParam.VarBinaryMax(payload)
+            });
+
+        Assert.Equal(payload.Length, result.Length);
+        Assert.Equal(payload, result.Payload);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_inserts_and_selects_binary_values_using_where_parameter()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+        await connection.ExecuteAsync(
+            """
+            CREATE TABLE #BinaryPayloads
+            (
+                Id uniqueidentifier NOT NULL,
+                FixedPayload binary(3) NOT NULL,
+                VariablePayload varbinary(4) NOT NULL,
+                LargePayload varbinary(max) NOT NULL
+            );
+            """);
+
+        try
+        {
+            var id = Guid.Parse("849862f4-5ece-448f-9554-c274aa01e2e8");
+            byte[] fixedPayload = [0x0A, 0x0B, 0x0C];
+            byte[] variablePayload = [0x0D, 0x0E];
+            byte[] largePayload = [0x0F, 0x10, 0x11, 0x12, 0x13];
+
+            int affectedRows = await connection.ExecuteAsync(
+                """
+                INSERT INTO #BinaryPayloads
+                (
+                    Id,
+                    FixedPayload,
+                    VariablePayload,
+                    LargePayload
+                )
+                VALUES
+                (
+                    @Id,
+                    @FixedPayload,
+                    @VariablePayload,
+                    @LargePayload
+                );
+                """,
+                new
+                {
+                    Id = SqlParam.UniqueIdentifier(id),
+                    FixedPayload = SqlParam.Binary(fixedPayload, 3),
+                    VariablePayload = SqlParam.VarBinary(variablePayload, 4),
+                    LargePayload = SqlParam.VarBinaryMax(largePayload)
+                });
+
+            BinaryTableRow result = await connection.QuerySingleAsync<BinaryTableRow>(
+                """
+                SELECT
+                    Id,
+                    FixedPayload,
+                    VariablePayload,
+                    LargePayload
+                FROM #BinaryPayloads
+                WHERE Id = @Id;
+                """,
+                new
+                {
+                    Id = SqlParam.UniqueIdentifier(id)
+                });
+
+            Assert.Equal(1, affectedRows);
+            Assert.Equal(id, result.Id);
+            Assert.Equal(fixedPayload, result.FixedPayload);
+            Assert.Equal(variablePayload, result.VariablePayload);
+            Assert.Equal(largePayload, result.LargePayload);
+        }
+        finally
+        {
+            await connection.ExecuteAsync("DROP TABLE IF EXISTS #BinaryPayloads;");
+        }
+    }
+
     private sealed class NumericBaseTypes
     {
         public string Bit { get; set; } = string.Empty;
@@ -551,5 +749,48 @@ public sealed class DapperSqlServerParameterTests
         public decimal MoneyValue { get; set; }
 
         public decimal SmallMoneyValue { get; set; }
+    }
+
+    private sealed class BinaryBaseTypes
+    {
+        public string Id { get; set; } = string.Empty;
+
+        public string FixedPayload { get; set; } = string.Empty;
+
+        public string VariablePayload { get; set; } = string.Empty;
+    }
+
+    private sealed class BinaryRoundTripResult
+    {
+        public Guid Id { get; set; }
+
+        public byte[] FixedPayload { get; set; } = [];
+
+        public byte[] VariablePayload { get; set; } = [];
+    }
+
+    private sealed class BinaryNullResult
+    {
+        public bool IdIsNull { get; set; }
+
+        public bool PayloadIsNull { get; set; }
+    }
+
+    private sealed class BinaryPayloadResult
+    {
+        public int Length { get; set; }
+
+        public byte[] Payload { get; set; } = [];
+    }
+
+    private sealed class BinaryTableRow
+    {
+        public Guid Id { get; set; }
+
+        public byte[] FixedPayload { get; set; } = [];
+
+        public byte[] VariablePayload { get; set; } = [];
+
+        public byte[] LargePayload { get; set; } = [];
     }
 }

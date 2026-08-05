@@ -226,6 +226,157 @@ public sealed class SqlParamTests
     }
 
     [Fact]
+    public void UniqueIdentifier_creates_expected_contract()
+    {
+        var id = Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b");
+
+        var parameter = SqlParam.UniqueIdentifier(id);
+
+        Assert.Equal(id, parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+        Assert.Null(parameter.Size);
+        Assert.Null(parameter.Precision);
+        Assert.Null(parameter.Scale);
+    }
+
+    [Fact]
+    public void UniqueIdentifier_accepts_empty_guid()
+    {
+        var parameter = SqlParam.UniqueIdentifier(Guid.Empty);
+
+        Assert.Equal(Guid.Empty, parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+    }
+
+    [Fact]
+    public void UniqueIdentifier_accepts_null()
+    {
+        var parameter = SqlParam.UniqueIdentifier(null);
+
+        Assert.Null(parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(8_000)]
+    public void Binary_accepts_size_boundaries(int size)
+    {
+        byte[] value = [0x01, 0x02];
+
+        var parameter = SqlParam.Binary(value, size);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+        Assert.Equal(size, parameter.Size);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(8_000)]
+    public void VarBinary_accepts_size_boundaries(int size)
+    {
+        byte[] value = [0x01, 0x02];
+
+        var parameter = SqlParam.VarBinary(value, size);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(size, parameter.Size);
+    }
+
+    [Fact]
+    public void Binary_preserves_empty_array()
+    {
+        byte[] value = [];
+
+        var parameter = SqlParam.Binary(value, 1);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Empty((byte[])parameter.Value!);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+    }
+
+    [Fact]
+    public void VarBinary_preserves_empty_array()
+    {
+        byte[] value = [];
+
+        var parameter = SqlParam.VarBinary(value, 1);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Empty((byte[])parameter.Value!);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+    }
+
+    [Fact]
+    public void Binary_accepts_null_array()
+    {
+        var parameter = SqlParam.Binary(null, 1);
+
+        Assert.Null(parameter.Value);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+        Assert.Equal(1, parameter.Size);
+    }
+
+    [Fact]
+    public void VarBinary_accepts_null_array()
+    {
+        var parameter = SqlParam.VarBinary(null, 1);
+
+        Assert.Null(parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(1, parameter.Size);
+    }
+
+    [Fact]
+    public void VarBinaryMax_uses_sql_server_max_size()
+    {
+        byte[] value = [0x01, 0x02];
+
+        var parameter = SqlParam.VarBinaryMax(value);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(-1, parameter.Size);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(8_001)]
+    public void Binary_rejects_invalid_size(int size)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(
+            () => SqlParam.Binary([0x01], size));
+
+        Assert.Equal("size", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(8_001)]
+    public void VarBinary_rejects_invalid_size(int size)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(
+            () => SqlParam.VarBinary([0x01], size));
+
+        Assert.Equal("size", exception.ParamName);
+    }
+
+    [Fact]
+    public void Binary_does_not_validate_value_length_against_size()
+    {
+        byte[] value = [0x01, 0x02];
+
+        var parameter = SqlParam.Binary(value, 1);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(1, parameter.Size);
+    }
+
+    [Fact]
     public void SqlParam_public_factories_are_explicit()
     {
         string[] factoryNames = typeof(SqlParam)
@@ -239,6 +390,7 @@ public sealed class SqlParamTests
             new[]
             {
                 "BigInt",
+                "Binary",
                 "Bit",
                 "Char",
                 "Decimal",
@@ -252,6 +404,9 @@ public sealed class SqlParamTests
                 "SmallInt",
                 "SmallMoney",
                 "TinyInt",
+                "UniqueIdentifier",
+                "VarBinary",
+                "VarBinaryMax",
                 "VarChar",
                 "VarCharMax",
             },

@@ -1,5 +1,5 @@
-Last completed prompt: 006
+Last completed prompt: 007
 Current status: Completed
 Branch: feat/string-parameters
-Last expected commit: feat: add SQL Server numeric parameters
-Next prompt: 007-binary-and-identifier-parameters
+Last expected commit: feat: add binary and identifier parameters
+Next prompt: 008-temporal-parameters

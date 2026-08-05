@@ -96,6 +96,107 @@ public sealed class TypedSqlParameterTests
     }
 
     [Fact]
+    public void AddParameter_adds_uniqueidentifier_parameter()
+    {
+        var id = Guid.Parse("7cdb49ea-c947-4fe1-861b-ddd941a02422");
+        var typedParameter = SqlParam.UniqueIdentifier(id);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Id");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(id, parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_converts_uniqueidentifier_null_to_db_null()
+    {
+        var typedParameter = SqlParam.UniqueIdentifier(null);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Id");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+    }
+
+    [Fact]
+    public void AddParameter_adds_binary_parameter_with_declared_size()
+    {
+        byte[] value = [0x01, 0x02];
+        var typedParameter = SqlParam.Binary(value, 2);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+        Assert.Equal(2, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_adds_varbinary_parameter_with_declared_size()
+    {
+        byte[] value = [0x01, 0x02];
+        var typedParameter = SqlParam.VarBinary(value, 8_000);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(8_000, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_adds_varbinary_max_parameter()
+    {
+        byte[] value = [0x01, 0x02];
+        var typedParameter = SqlParam.VarBinaryMax(value);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(-1, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_preserves_empty_binary_array()
+    {
+        byte[] value = [];
+        var typedParameter = SqlParam.VarBinary(value, 1);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Empty((byte[])parameter.Value);
+    }
+
+    [Fact]
+    public void AddParameter_converts_null_binary_array_to_db_null()
+    {
+        var typedParameter = SqlParam.VarBinary(null, 1);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(1, parameter.Size);
+    }
+
+    [Fact]
     public void AddParameter_reuses_existing_parameter()
     {
         var typedParameter = SqlParam.VarChar("active", 20);
@@ -126,6 +227,23 @@ public sealed class TypedSqlParameterTests
         Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
         Assert.Equal((byte)18, parameter.Precision);
         Assert.Equal((byte)2, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_reuses_existing_parameter_for_binary_metadata()
+    {
+        byte[] value = [0x0A, 0x0B];
+        var typedParameter = SqlParam.Binary(value, 2);
+        using var command = new SqlCommand();
+        var existing = command.Parameters.Add("Payload", SqlDbType.VarBinary, 100);
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+        Assert.Equal(2, parameter.Size);
     }
 
     [Fact]

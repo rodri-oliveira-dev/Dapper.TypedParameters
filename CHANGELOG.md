@@ -5,6 +5,8 @@
 - Adiciona parametros SQL Server numericos e booleanos explicitos para Dapper.
 - Inclui `bit`, `tinyint`, `smallint`, `int`, `bigint`, `real`, `float`, `decimal`, `money` e `smallmoney`.
 - Configura `Precision` e `Scale` declarados para `decimal`.
+- Adiciona parametros `uniqueidentifier`, `binary`, `varbinary` e `varbinary(max)`.
+- Preserva arrays binarios vazios e converte somente `null` para `DBNull.Value`.
 - Mantem API equivalente para `net8.0` e `net10.0`.
 
 ## 0.1.0-preview.1
