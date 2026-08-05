@@ -42,8 +42,18 @@ jobs:
       - name: Build
         run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+      - name: Test unit
+        run: dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+
+      - name: Docker diagnostics
+        run: |
+          docker version
+          docker info
+
+      - name: Test integration
+        env:
+          ACCEPT_EULA: "Y"
+        run: dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
 
   pack:
     name: Pack NuGet artifact

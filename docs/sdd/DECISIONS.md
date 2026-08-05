@@ -17,3 +17,6 @@
 10. Nenhum pacote provider-neutral `Core` ou `Abstractions` sera criado neste momento.
 11. A CI valida `net8.0` e `net10.0` em matriz explicita antes do empacotamento.
 12. O pacote NuGet gerado pela CI e retido apenas como artefato `.nupkg`; nao ha publicacao automatica.
+13. Testes de integracao com SQL Server real usam `Testcontainers.MsSql` como unico mecanismo de container.
+14. A imagem SQL Server para integracao e `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04`.
+15. Testes de integracao que exigem Docker ficam em projeto separado e devem falhar quando Docker ou SQL Server nao estiverem disponiveis, inclusive na CI.
