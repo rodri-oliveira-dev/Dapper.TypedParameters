@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+using System.Data;
 using Xunit;
 
 namespace Dapper.TypedParameters.SqlServer.Tests;

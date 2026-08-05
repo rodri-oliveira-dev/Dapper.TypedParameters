@@ -1,5 +1,4 @@
-using System;
-using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace Dapper.TypedParameters.SqlServer;
 

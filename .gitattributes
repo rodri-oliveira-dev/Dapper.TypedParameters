@@ -1,0 +1,33 @@
+# Normalize text and keep repository diffs stable across Windows, Linux and CI.
+* text=auto
+
+# Source and project files use LF.
+*.cs            text eol=lf
+*.csproj        text eol=lf
+*.props         text eol=lf
+*.targets       text eol=lf
+*.sln           text eol=lf
+*.json          text eol=lf
+*.code-workspace text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.md            text eol=lf
+*.editorconfig  text eol=lf
+*.gitignore     text eol=lf
+*.gitattributes text eol=lf
+
+# Scripts.
+*.sh            text eol=lf
+*.ps1           text eol=crlf
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# Binary assets and package artifacts.
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.pdf           binary
+*.nupkg         binary
+*.snupkg        binary
