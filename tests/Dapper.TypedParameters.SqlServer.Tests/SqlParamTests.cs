@@ -5,6 +5,35 @@ namespace Dapper.TypedParameters.SqlServer.Tests;
 
 public sealed class SqlParamTests
 {
+    public static TheoryData<string, SqlDbType> NumericFactories =>
+        new()
+        {
+            { "Bit", SqlDbType.Bit },
+            { "TinyInt", SqlDbType.TinyInt },
+            { "SmallInt", SqlDbType.SmallInt },
+            { "Int", SqlDbType.Int },
+            { "BigInt", SqlDbType.BigInt },
+            { "Real", SqlDbType.Real },
+            { "Float", SqlDbType.Float },
+            { "Money", SqlDbType.Money },
+            { "SmallMoney", SqlDbType.SmallMoney },
+        };
+
+    public static TheoryData<string, SqlDbType> NullNumericFactories =>
+        new()
+        {
+            { "Bit", SqlDbType.Bit },
+            { "TinyInt", SqlDbType.TinyInt },
+            { "SmallInt", SqlDbType.SmallInt },
+            { "Int", SqlDbType.Int },
+            { "BigInt", SqlDbType.BigInt },
+            { "Real", SqlDbType.Real },
+            { "Float", SqlDbType.Float },
+            { "Decimal", SqlDbType.Decimal },
+            { "Money", SqlDbType.Money },
+            { "SmallMoney", SqlDbType.SmallMoney },
+        };
+
     [Fact]
     public void VarChar_creates_expected_contract()
     {
@@ -114,4 +143,164 @@ public sealed class SqlParamTests
         Assert.Equal(8_000, ansi.Size);
         Assert.Equal(4_000, unicode.Size);
     }
+
+    [Theory]
+    [MemberData(nameof(NumericFactories))]
+    public void Numeric_factories_create_expected_contract(
+        string factoryName,
+        SqlDbType expectedSqlDbType)
+    {
+        ArgumentNullException.ThrowIfNull(factoryName);
+
+        var parameter = CreateNonNullNumericParameter(factoryName);
+        object expectedValue = GetExpectedNumericValue(factoryName);
+
+        Assert.NotEmpty(factoryName);
+        Assert.Equal(expectedValue, parameter.Value);
+        Assert.Equal(expectedSqlDbType, parameter.SqlDbType);
+        Assert.Null(parameter.Size);
+        Assert.Null(parameter.Precision);
+        Assert.Null(parameter.Scale);
+    }
+
+    [Theory]
+    [MemberData(nameof(NullNumericFactories))]
+    public void Numeric_factories_accept_null_values(
+        string factoryName,
+        SqlDbType expectedSqlDbType)
+    {
+        ArgumentNullException.ThrowIfNull(factoryName);
+
+        var parameter = CreateNullNumericParameter(factoryName);
+
+        Assert.NotEmpty(factoryName);
+        Assert.Null(parameter.Value);
+        Assert.Equal(expectedSqlDbType, parameter.SqlDbType);
+        Assert.Null(parameter.Size);
+    }
+
+    [Fact]
+    public void Decimal_creates_expected_contract()
+    {
+        var parameter = SqlParam.Decimal(123.45M, 18, 2);
+
+        Assert.Equal(123.45M, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Null(parameter.Size);
+        Assert.Equal((byte)18, parameter.Precision);
+        Assert.Equal((byte)2, parameter.Scale);
+    }
+
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(38, 0)]
+    [InlineData(38, 38)]
+    public void Decimal_accepts_precision_and_scale_boundaries(
+        byte precision,
+        byte scale)
+    {
+        var parameter = SqlParam.Decimal(1M, precision, scale);
+
+        Assert.Equal(precision, parameter.Precision);
+        Assert.Equal(scale, parameter.Scale);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(39)]
+    public void Decimal_rejects_invalid_precision(byte precision)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(
+            () => SqlParam.Decimal(1M, precision, 0));
+
+        Assert.Equal("precision", exception.ParamName);
+    }
+
+    [Fact]
+    public void Decimal_rejects_scale_greater_than_precision()
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(
+            () => SqlParam.Decimal(1M, 18, 19));
+
+        Assert.Equal("scale", exception.ParamName);
+    }
+
+    [Fact]
+    public void SqlParam_public_factories_are_explicit()
+    {
+        string[] factoryNames = typeof(SqlParam)
+            .GetMethods()
+            .Where(method => method.DeclaringType == typeof(SqlParam))
+            .Select(method => method.Name)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            new[]
+            {
+                "BigInt",
+                "Bit",
+                "Char",
+                "Decimal",
+                "Float",
+                "Int",
+                "Money",
+                "NChar",
+                "NVarChar",
+                "NVarCharMax",
+                "Real",
+                "SmallInt",
+                "SmallMoney",
+                "TinyInt",
+                "VarChar",
+                "VarCharMax",
+            },
+            factoryNames);
+    }
+
+    private static TypedSqlParameter CreateNonNullNumericParameter(string factoryName) =>
+        factoryName switch
+        {
+            "Bit" => SqlParam.Bit(true),
+            "TinyInt" => SqlParam.TinyInt(byte.MaxValue),
+            "SmallInt" => SqlParam.SmallInt(short.MinValue),
+            "Int" => SqlParam.Int(int.MinValue),
+            "BigInt" => SqlParam.BigInt(long.MinValue),
+            "Real" => SqlParam.Real(12.5F),
+            "Float" => SqlParam.Float(12.5D),
+            "Money" => SqlParam.Money(-12.34M),
+            "SmallMoney" => SqlParam.SmallMoney(12.34M),
+            _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
+        };
+
+    private static TypedSqlParameter CreateNullNumericParameter(string factoryName) =>
+        factoryName switch
+        {
+            "Bit" => SqlParam.Bit(null),
+            "TinyInt" => SqlParam.TinyInt(null),
+            "SmallInt" => SqlParam.SmallInt(null),
+            "Int" => SqlParam.Int(null),
+            "BigInt" => SqlParam.BigInt(null),
+            "Real" => SqlParam.Real(null),
+            "Float" => SqlParam.Float(null),
+            "Decimal" => SqlParam.Decimal(null, 18, 2),
+            "Money" => SqlParam.Money(null),
+            "SmallMoney" => SqlParam.SmallMoney(null),
+            _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
+        };
+
+    private static object GetExpectedNumericValue(string factoryName) =>
+        factoryName switch
+        {
+            "Bit" => true,
+            "TinyInt" => byte.MaxValue,
+            "SmallInt" => short.MinValue,
+            "Int" => int.MinValue,
+            "BigInt" => long.MinValue,
+            "Real" => 12.5F,
+            "Float" => 12.5D,
+            "Money" => -12.34M,
+            "SmallMoney" => 12.34M,
+            _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
+        };
 }

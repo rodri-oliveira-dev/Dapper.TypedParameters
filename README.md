@@ -2,7 +2,7 @@
 
 `Dapper.TypedParameters.SqlServer` permite declarar explicitamente tipos de parametros SQL Server usados pelo Dapper.
 
-O primeiro preview foca em parametros string para SQL Server com `Microsoft.Data.SqlClient`. A ideia e deixar o tipo e o tamanho do parametro visiveis no ponto de chamada, em vez de depender apenas da inferencia padrao do provider.
+O primeiro preview foca em parametros SQL Server explicitos com `Microsoft.Data.SqlClient`. A ideia e deixar tipo, tamanho, precisao e escala visiveis no ponto de chamada, em vez de depender apenas da inferencia padrao do provider.
 
 ## Motivacao
 
@@ -11,6 +11,8 @@ Ao enviar uma `string` .NET para o SQL Server, o parametro pode ser inferido com
 Dependendo da consulta, dos tipos envolvidos, da collation e dos indices disponiveis, essas conversoes podem afetar o plano de execucao e reduzir a capacidade do otimizador de usar uma busca eficiente. Este pacote ajuda o chamador a declarar `varchar`, `nvarchar`, `char`, `nchar`, `varchar(max)` ou `nvarchar(max)` de forma explicita.
 
 Declarar o tipo correto do parametro nao promete eliminar todas as conversoes implicitas de uma consulta. O SQL, o schema, expressoes, funcoes, collations e outros parametros continuam fazendo parte do plano final.
+
+Para parametros numericos, o pacote tambem evita que precisao e escala de `decimal` fiquem implicitas no ponto de chamada. A biblioteca nao arredonda valores; conversoes validas continuam sob responsabilidade de `Microsoft.Data.SqlClient` e do SQL Server.
 
 ## Compatibilidade
 
@@ -54,6 +56,16 @@ SqlParam.Char(value, size)
 SqlParam.NChar(value, size)
 SqlParam.VarCharMax(value)
 SqlParam.NVarCharMax(value)
+SqlParam.Bit(value)
+SqlParam.TinyInt(value)
+SqlParam.SmallInt(value)
+SqlParam.Int(value)
+SqlParam.BigInt(value)
+SqlParam.Real(value)
+SqlParam.Float(value)
+SqlParam.Decimal(value, precision, scale)
+SqlParam.Money(value)
+SqlParam.SmallMoney(value)
 ```
 
 Todos os metodos retornam um parametro que o Dapper consome como `SqlMapper.ICustomQueryParameter`.
@@ -270,6 +282,64 @@ public static class AsyncExample
 }
 ```
 
+### Parametros numericos
+
+```csharp
+using System.Threading.Tasks;
+using Dapper;
+using Dapper.TypedParameters.SqlServer;
+using Microsoft.Data.SqlClient;
+
+public static class NumericExample
+{
+    public static async Task<int> InsertInvoiceAsync(
+        string connectionString,
+        int customerId,
+        decimal amount)
+    {
+        await using var connection = new SqlConnection(connectionString);
+
+        return await connection.ExecuteAsync(
+            """
+            INSERT INTO dbo.Invoices (CustomerId, Amount, IsPaid)
+            VALUES (@CustomerId, @Amount, @IsPaid);
+            """,
+            new
+            {
+                CustomerId = SqlParam.Int(customerId),
+                Amount = SqlParam.Decimal(amount, precision: 18, scale: 2),
+                IsPaid = SqlParam.Bit(false)
+            });
+    }
+}
+```
+
+### WHERE com parametro numerico
+
+```csharp
+using System.Threading.Tasks;
+using Dapper;
+using Dapper.TypedParameters.SqlServer;
+using Microsoft.Data.SqlClient;
+
+public static class NumericWhereExample
+{
+    public static async Task<decimal> GetBalanceAsync(
+        string connectionString,
+        long accountId)
+    {
+        await using var connection = new SqlConnection(connectionString);
+
+        return await connection.QuerySingleAsync<decimal>(
+            "SELECT Balance FROM dbo.Accounts WHERE AccountId = @AccountId;",
+            new
+            {
+                AccountId = SqlParam.BigInt(accountId)
+            });
+    }
+}
+```
+
 ## Limites
 
 | Tipo SQL Server | Tamanho aceito |
@@ -282,6 +352,25 @@ public static class AsyncExample
 Para `varchar` e `char`, o tamanho declarado pode representar bytes, nao uma equivalencia universal com quantidade de caracteres. A relacao entre bytes e caracteres depende dos dados e da configuracao do SQL Server.
 
 Os metodos com `size` rejeitam valores fora dos intervalos acima com `ArgumentOutOfRangeException`. Para tipos `max`, use os metodos proprios em vez de passar `-1`.
+
+Tipos numericos e booleanos suportados:
+
+| Tipo SQL Server | Factory |
+| --- | --- |
+| `bit` | `SqlParam.Bit(value)` |
+| `tinyint` | `SqlParam.TinyInt(value)` |
+| `smallint` | `SqlParam.SmallInt(value)` |
+| `int` | `SqlParam.Int(value)` |
+| `bigint` | `SqlParam.BigInt(value)` |
+| `real` | `SqlParam.Real(value)` |
+| `float` | `SqlParam.Float(value)` |
+| `decimal` | `SqlParam.Decimal(value, precision, scale)` |
+| `money` | `SqlParam.Money(value)` |
+| `smallmoney` | `SqlParam.SmallMoney(value)` |
+
+`SqlParam.Decimal` aceita `precision` de 1 a 38 e `scale` de 0 ate `precision`. Valores fora desses limites sao rejeitados com `ArgumentOutOfRangeException`.
+
+Nao ha factory `SqlParam.Numeric`: no SQL Server, `numeric` e sinonimo de `decimal`. Tambem nao ha overload generico como `SqlParam.Number<T>`, porque a API exige declaracao explicita do tipo SQL Server.
 
 ## Tratamento de null
 

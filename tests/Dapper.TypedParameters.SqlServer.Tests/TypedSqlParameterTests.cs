@@ -48,6 +48,54 @@ public sealed class TypedSqlParameterTests
     }
 
     [Fact]
+    public void AddParameter_adds_numeric_parameter_without_size()
+    {
+        var typedParameter = SqlParam.Int(42);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal("Value", parameter.ParameterName);
+        Assert.Equal(42, parameter.Value);
+        Assert.Equal(SqlDbType.Int, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal(0, parameter.Precision);
+        Assert.Equal(0, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_adds_decimal_parameter_with_declared_precision_and_scale()
+    {
+        var typedParameter = SqlParam.Decimal(123.45M, 18, 2);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Amount");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(123.45M, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal((byte)18, parameter.Precision);
+        Assert.Equal((byte)2, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_converts_numeric_null_to_db_null()
+    {
+        var typedParameter = SqlParam.Decimal(null, 38, 18);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Amount");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal((byte)38, parameter.Precision);
+        Assert.Equal((byte)18, parameter.Scale);
+    }
+
+    [Fact]
     public void AddParameter_reuses_existing_parameter()
     {
         var typedParameter = SqlParam.VarChar("active", 20);
@@ -61,6 +109,23 @@ public sealed class TypedSqlParameterTests
         Assert.Equal("active", parameter.Value);
         Assert.Equal(SqlDbType.VarChar, parameter.SqlDbType);
         Assert.Equal(20, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_reuses_existing_parameter_for_decimal_metadata()
+    {
+        var typedParameter = SqlParam.Decimal(-123.45M, 18, 2);
+        using var command = new SqlCommand();
+        var existing = command.Parameters.Add("Amount", SqlDbType.Int);
+
+        typedParameter.AddParameter(command, "Amount");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Equal(-123.45M, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal((byte)18, parameter.Precision);
+        Assert.Equal((byte)2, parameter.Scale);
     }
 
     [Fact]

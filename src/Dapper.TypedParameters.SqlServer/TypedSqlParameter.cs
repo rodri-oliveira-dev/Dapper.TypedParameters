@@ -10,11 +10,18 @@ namespace Dapper.TypedParameters.SqlServer;
 /// </summary>
 public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
 {
-    internal TypedSqlParameter(object? value, SqlDbType sqlDbType, int? size = null)
+    internal TypedSqlParameter(
+        object? value,
+        SqlDbType sqlDbType,
+        int? size = null,
+        byte? precision = null,
+        byte? scale = null)
     {
         Value = value;
         SqlDbType = sqlDbType;
         Size = size;
+        Precision = precision;
+        Scale = scale;
     }
 
     /// <summary>
@@ -32,6 +39,16 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
     /// A value of <c>-1</c> represents a SQL Server <c>max</c> type.
     /// </summary>
     public int? Size { get; }
+
+    /// <summary>
+    /// Gets the declared parameter precision, or <see langword="null"/> when the type has no declared precision.
+    /// </summary>
+    public byte? Precision { get; }
+
+    /// <summary>
+    /// Gets the declared parameter scale, or <see langword="null"/> when the type has no declared scale.
+    /// </summary>
+    public byte? Scale { get; }
 
     /// <inheritdoc />
     public void AddParameter(IDbCommand command, string name)
@@ -64,6 +81,16 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
         if (Size.HasValue)
         {
             parameter.Size = Size.Value;
+        }
+
+        if (Precision.HasValue)
+        {
+            parameter.Precision = Precision.Value;
+        }
+
+        if (Scale.HasValue)
+        {
+            parameter.Scale = Scale.Value;
         }
     }
 

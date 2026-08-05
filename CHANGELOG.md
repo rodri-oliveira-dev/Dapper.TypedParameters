@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Adiciona parametros SQL Server numericos e booleanos explicitos para Dapper.
+- Inclui `bit`, `tinyint`, `smallint`, `int`, `bigint`, `real`, `float`, `decimal`, `money` e `smallmoney`.
+- Configura `Precision` e `Scale` declarados para `decimal`.
+- Mantem API equivalente para `net8.0` e `net10.0`.
+
 ## 0.1.0-preview.1
 
 - Primeiro escopo preview do pacote planejado `Dapper.TypedParameters.SqlServer`.
