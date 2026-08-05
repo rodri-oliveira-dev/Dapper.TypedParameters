@@ -1,0 +1,46 @@
+{
+  "dotnet.defaultSolution": "Dapper.TypedParameters.sln",
+  "dotnet.server.useOmnisharp": false,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.vs": true,
+    "**/.dotnet": true,
+    "**/.dotnet-home": true,
+    "**/.nuget": true,
+    "**/TestResults": true,
+    "**/artifacts": true,
+    "**/coverage": true,
+    "**/coverage-*": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.vs": true,
+    "**/.dotnet": true,
+    "**/.dotnet-home": true,
+    "**/.nuget": true,
+    "**/TestResults": true,
+    "**/artifacts": true,
+    "**/coverage": true,
+    "**/coverage-*": true
+  },
+  "files.watcherExclude": {
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/.vs/**": true,
+    "**/.dotnet/**": true,
+    "**/.dotnet-home/**": true,
+    "**/.nuget/**": true,
+    "**/TestResults/**": true,
+    "**/artifacts/**": true,
+    "**/coverage/**": true,
+    "**/coverage-*/**": true
+  },
+  "search.useIgnoreFiles": true,
+  "search.useGlobalIgnoreFiles": true
+}

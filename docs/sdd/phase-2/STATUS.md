@@ -1,14 +1,14 @@
-# Phase 2 status
-
-Last completed prompt: 008
+Last completed prompt: 009
 Current status: Completed
-Last expected commit: feat: add SQL Server temporal parameters
-Next prompt: 009-output-parameters
+Branch: feat/output-parameters
+Last expected commit: feat: add output parameter support
+Next prompt: 010-table-valued-parameters
 
 ## Handoff notes
 
 - Remote update over SSH failed with `Permission denied (publickey)`.
-- HTTPS showed `origin/main` at the same commit as the local `main`.
-- The expected prompt 006/007 SDD files were not present in the accessible
-  `main`; prompt 008 was implemented on top of the available codebase.
-
+- HTTPS showed `origin/main` at `308c68e`, which does not include the local
+  prompt 008 commit.
+- The local `feat/string-parameters` branch contains prompt 006 and 007 work
+  that was not present in the accessible `main`; the prompt 009 branch combines
+  that local phase-2 state with prompt 008 before implementing outputs.

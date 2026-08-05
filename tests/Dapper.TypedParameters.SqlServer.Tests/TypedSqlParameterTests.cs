@@ -18,6 +18,7 @@ public sealed class TypedSqlParameterTests
         Assert.Equal("Document", parameter.ParameterName);
         Assert.Equal("12345678901", parameter.Value);
         Assert.Equal(SqlDbType.VarChar, parameter.SqlDbType);
+        Assert.Equal(ParameterDirection.Input, parameter.Direction);
         Assert.Equal(11, parameter.Size);
     }
 
@@ -45,6 +46,162 @@ public sealed class TypedSqlParameterTests
 
         var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
         Assert.Equal(-1, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_configures_output_direction()
+    {
+        var typedParameter = SqlParam.VarChar(null, 20).AsOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(ParameterDirection.Output, parameter.Direction);
+        Assert.Equal(SqlDbType.VarChar, parameter.SqlDbType);
+        Assert.Equal(20, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_configures_input_output_direction()
+    {
+        var typedParameter = SqlParam.Int(1).AsInputOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(ParameterDirection.InputOutput, parameter.Direction);
+        Assert.Equal(1, parameter.Value);
+        Assert.Equal(SqlDbType.Int, parameter.SqlDbType);
+    }
+
+    [Theory]
+    [MemberData(nameof(SqlParamTests.ScalarFactories), MemberType = typeof(SqlParamTests))]
+    public void AddParameter_materializes_output_direction_for_all_scalar_factories(
+        string factoryName)
+    {
+        var parameter = SqlParamTests.CreateScalarParameter(factoryName);
+        using var command = new SqlCommand();
+
+        parameter.AsOutput().AddParameter(command, "Value");
+
+        var sqlParameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.NotEmpty(factoryName);
+        Assert.Equal(ParameterDirection.Output, sqlParameter.Direction);
+        Assert.Equal(parameter.SqlDbType, sqlParameter.SqlDbType);
+    }
+
+    [Fact]
+    public void OutputValue_rejects_read_before_materialization()
+    {
+        var typedParameter = SqlParam.Int(null).AsOutput();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => typedParameter.OutputValue);
+
+        Assert.Contains("has not been materialized", exception.Message);
+    }
+
+    [Fact]
+    public void GetValue_rejects_read_before_materialization()
+    {
+        var typedParameter = SqlParam.Int(null).AsOutput();
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => typedParameter.GetValue<int?>());
+
+        Assert.Contains("has not been materialized", exception.Message);
+    }
+
+    [Fact]
+    public void OutputValue_reads_materialized_parameter_value()
+    {
+        var typedParameter = SqlParam.Int(null).AsOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+        command.Parameters["Value"].Value = 42;
+
+        Assert.Equal(42, typedParameter.OutputValue);
+        Assert.Equal(42, typedParameter.GetValue<int>());
+    }
+
+    [Fact]
+    public void OutputValue_returns_null_for_db_null()
+    {
+        var typedParameter = SqlParam.NVarChar(null, 20).AsOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+        command.Parameters["Value"].Value = DBNull.Value;
+
+        Assert.Null(typedParameter.OutputValue);
+        Assert.Null(typedParameter.GetValue<string?>());
+        Assert.Null(typedParameter.GetValue<int?>());
+    }
+
+    [Fact]
+    public void GetValue_rejects_db_null_for_non_nullable_value_type()
+    {
+        var typedParameter = SqlParam.Int(null).AsOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+        command.Parameters["Value"].Value = DBNull.Value;
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => typedParameter.GetValue<int>());
+
+        Assert.Contains("database null", exception.Message);
+        Assert.Contains(typeof(int).FullName!, exception.Message);
+    }
+
+    [Fact]
+    public void GetValue_allows_compatible_reference_conversion()
+    {
+        var typedParameter = SqlParam.VarChar(null, 20).AsOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+        command.Parameters["Value"].Value = "done";
+
+        Assert.Equal("done", typedParameter.GetValue<string>());
+        Assert.Equal("done", typedParameter.GetValue<object>());
+    }
+
+    [Fact]
+    public void GetValue_rejects_incompatible_conversion()
+    {
+        var typedParameter = SqlParam.VarChar(null, 20).AsOutput();
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+        command.Parameters["Value"].Value = "done";
+
+        var exception = Assert.Throws<InvalidCastException>(
+            () => typedParameter.GetValue<int>());
+
+        Assert.Contains(typeof(int).FullName!, exception.Message);
+        Assert.Contains(typeof(string).FullName!, exception.Message);
+    }
+
+    [Fact]
+    public void Output_parameter_can_be_reused_non_concurrently()
+    {
+        var typedParameter = SqlParam.Int(null).AsOutput();
+        using var firstCommand = new SqlCommand();
+        using var secondCommand = new SqlCommand();
+
+        typedParameter.AddParameter(firstCommand, "Value");
+        firstCommand.Parameters["Value"].Value = 1;
+
+        Assert.Equal(1, typedParameter.GetValue<int>());
+
+        typedParameter.AddParameter(secondCommand, "Value");
+        secondCommand.Parameters["Value"].Value = 2;
+
+        Assert.Equal(2, typedParameter.GetValue<int>());
     }
 
     [Fact]
@@ -109,6 +266,155 @@ public sealed class TypedSqlParameterTests
     }
 
     [Fact]
+    public void AddParameter_adds_numeric_parameter_without_size()
+    {
+        var typedParameter = SqlParam.Int(42);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal("Value", parameter.ParameterName);
+        Assert.Equal(42, parameter.Value);
+        Assert.Equal(SqlDbType.Int, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal(0, parameter.Precision);
+        Assert.Equal(0, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_adds_decimal_parameter_with_declared_precision_and_scale()
+    {
+        var typedParameter = SqlParam.Decimal(123.45M, 18, 2);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Amount");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(123.45M, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal((byte)18, parameter.Precision);
+        Assert.Equal((byte)2, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_converts_numeric_null_to_db_null()
+    {
+        var typedParameter = SqlParam.Decimal(null, 38, 18);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Amount");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal((byte)38, parameter.Precision);
+        Assert.Equal((byte)18, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_adds_uniqueidentifier_parameter()
+    {
+        var id = Guid.Parse("7cdb49ea-c947-4fe1-861b-ddd941a02422");
+        var typedParameter = SqlParam.UniqueIdentifier(id);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Id");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(id, parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_converts_uniqueidentifier_null_to_db_null()
+    {
+        var typedParameter = SqlParam.UniqueIdentifier(null);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Id");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(SqlDbType.UniqueIdentifier, parameter.SqlDbType);
+    }
+
+    [Fact]
+    public void AddParameter_adds_binary_parameter_with_declared_size()
+    {
+        byte[] value = [0x01, 0x02];
+        var typedParameter = SqlParam.Binary(value, 2);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+        Assert.Equal(2, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_adds_varbinary_parameter_with_declared_size()
+    {
+        byte[] value = [0x01, 0x02];
+        var typedParameter = SqlParam.VarBinary(value, 8_000);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(8_000, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_adds_varbinary_max_parameter()
+    {
+        byte[] value = [0x01, 0x02];
+        var typedParameter = SqlParam.VarBinaryMax(value);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(-1, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_preserves_empty_binary_array()
+    {
+        byte[] value = [];
+        var typedParameter = SqlParam.VarBinary(value, 1);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Empty((byte[])parameter.Value);
+    }
+
+    [Fact]
+    public void AddParameter_converts_null_binary_array_to_db_null()
+    {
+        var typedParameter = SqlParam.VarBinary(null, 1);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(SqlDbType.VarBinary, parameter.SqlDbType);
+        Assert.Equal(1, parameter.Size);
+    }
+
+    [Fact]
     public void AddParameter_reuses_existing_parameter()
     {
         var typedParameter = SqlParam.VarChar("active", 20);
@@ -122,6 +428,40 @@ public sealed class TypedSqlParameterTests
         Assert.Equal("active", parameter.Value);
         Assert.Equal(SqlDbType.VarChar, parameter.SqlDbType);
         Assert.Equal(20, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_reuses_existing_parameter_for_decimal_metadata()
+    {
+        var typedParameter = SqlParam.Decimal(-123.45M, 18, 2);
+        using var command = new SqlCommand();
+        var existing = command.Parameters.Add("Amount", SqlDbType.Int);
+
+        typedParameter.AddParameter(command, "Amount");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Equal(-123.45M, parameter.Value);
+        Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal((byte)18, parameter.Precision);
+        Assert.Equal((byte)2, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_reuses_existing_parameter_for_binary_metadata()
+    {
+        byte[] value = [0x0A, 0x0B];
+        var typedParameter = SqlParam.Binary(value, 2);
+        using var command = new SqlCommand();
+        var existing = command.Parameters.Add("Payload", SqlDbType.VarBinary, 100);
+
+        typedParameter.AddParameter(command, "Payload");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
+        Assert.Equal(2, parameter.Size);
     }
 
     [Fact]

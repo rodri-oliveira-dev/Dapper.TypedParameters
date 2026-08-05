@@ -1,0 +1,82 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dotnet: restore",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "restore",
+        "${workspaceFolder}/Dapper.TypedParameters.sln"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "dotnet: build debug",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/Dapper.TypedParameters.sln",
+        "--configuration",
+        "Debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "dotnet: build release",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/Dapper.TypedParameters.sln",
+        "--configuration",
+        "Release"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "dotnet: test",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/Dapper.TypedParameters.sln",
+        "--configuration",
+        "Release"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "dotnet: pack preview",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "pack",
+        "${workspaceFolder}/src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj",
+        "--configuration",
+        "Release",
+        "--output",
+        "${workspaceFolder}/artifacts/packages"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "dotnet: clean artifacts",
+      "type": "shell",
+      "command": "dotnet clean \"${workspaceFolder}/Dapper.TypedParameters.sln\" && rm -rf \"${workspaceFolder}/artifacts\"",
+      "windows": {
+        "command": "dotnet clean \"${workspaceFolder}/Dapper.TypedParameters.sln\"; if (Test-Path \"${workspaceFolder}/artifacts\") { Remove-Item -Recurse -Force \"${workspaceFolder}/artifacts\" }"
+      },
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

@@ -1,9 +1,26 @@
-# Phase 2 - Typed SQL Server parameters
+# SDD phase 2
 
-Phase 2 expands the initial `SqlParam` API with explicit SQL Server parameter
-families while keeping the public surface small and provider-specific.
+## Purpose
 
-The accessible `main` branch did not contain the expected phase-2 handoff files
-for prompts 006 and 007. Prompt 008 is recorded here as the next completed
-phase-2 prompt based on the current repository state.
+Phase 2 expands `Dapper.TypedParameters.SqlServer` beyond string parameters while preserving the small, explicit SQL Server API, the single package identity, and compatibility with `net8.0` and `net10.0`.
 
+## Prompt order
+
+Prompts must run in this order:
+
+1. `006-numeric-parameters`
+2. `007-binary-and-identifier-parameters`
+3. `008-date-and-time-parameters`
+4. `009-output-parameters`
+5. `010-table-valued-parameters`
+6. `011-release-readiness`
+
+Each prompt must run in a separate chat without relying on memory from previous chats.
+
+## Execution rules
+
+- Merge the current prompt before starting the next prompt.
+- Keep `DECISIONS.md` and `STATUS.md` current during the phase.
+- Create the prompt specification before implementation.
+- Produce one semantic commit per prompt.
+- Do not push, open pull requests, publish packages, create releases, or create tags automatically.
