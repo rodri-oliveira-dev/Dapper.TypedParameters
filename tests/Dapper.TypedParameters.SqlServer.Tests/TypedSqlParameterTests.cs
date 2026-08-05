@@ -48,6 +48,67 @@ public sealed class TypedSqlParameterTests
     }
 
     [Fact]
+    public void AddParameter_materializes_date_only_as_date_time()
+    {
+        var value = new DateOnly(2026, 8, 5);
+        var typedParameter = SqlParam.Date(value);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(value.ToDateTime(TimeOnly.MinValue), parameter.Value);
+        Assert.Equal(SqlDbType.Date, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_materializes_time_only_as_time_span()
+    {
+        var value = new TimeOnly(12, 34, 56, 789);
+        var typedParameter = SqlParam.Time(value, scale: 3);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(value.ToTimeSpan(), parameter.Value);
+        Assert.Equal(SqlDbType.Time, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal((byte)3, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_configures_temporal_scale_without_size()
+    {
+        var typedParameter = SqlParam.DateTime2(
+            new DateTime(2026, 8, 5, 12, 34, 56, 789),
+            scale: 7);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Equal(SqlDbType.DateTime2, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal((byte)7, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_keeps_date_time_value_kind()
+    {
+        var value = new DateTime(2026, 8, 5, 12, 34, 56, DateTimeKind.Utc);
+        var typedParameter = SqlParam.DateTime2(value);
+        using var command = new SqlCommand();
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        var materializedValue = Assert.IsType<DateTime>(parameter.Value);
+        Assert.Equal(DateTimeKind.Utc, materializedValue.Kind);
+    }
+
+    [Fact]
     public void AddParameter_reuses_existing_parameter()
     {
         var typedParameter = SqlParam.VarChar("active", 20);

@@ -10,11 +10,16 @@ namespace Dapper.TypedParameters.SqlServer;
 /// </summary>
 public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
 {
-    internal TypedSqlParameter(object? value, SqlDbType sqlDbType, int? size = null)
+    internal TypedSqlParameter(
+        object? value,
+        SqlDbType sqlDbType,
+        int? size = null,
+        byte? scale = null)
     {
         Value = value;
         SqlDbType = sqlDbType;
         Size = size;
+        Scale = scale;
     }
 
     /// <summary>
@@ -32,6 +37,11 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
     /// A value of <c>-1</c> represents a SQL Server <c>max</c> type.
     /// </summary>
     public int? Size { get; }
+
+    /// <summary>
+    /// Gets the declared parameter scale, or <see langword="null"/> when the type has no scale.
+    /// </summary>
+    public byte? Scale { get; }
 
     /// <inheritdoc />
     public void AddParameter(IDbCommand command, string name)
@@ -58,12 +68,17 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
 
         var parameter = GetOrCreateParameter(sqlCommand, name);
 
-        parameter.Value = Value ?? DBNull.Value;
+        parameter.Value = MaterializeValue(Value) ?? DBNull.Value;
         parameter.SqlDbType = SqlDbType;
 
         if (Size.HasValue)
         {
             parameter.Size = Size.Value;
+        }
+
+        if (Scale.HasValue)
+        {
+            parameter.Scale = Scale.Value;
         }
     }
 
@@ -82,4 +97,12 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
 
         return parameter;
     }
+
+    private static object? MaterializeValue(object? value) =>
+        value switch
+        {
+            DateOnly date => date.ToDateTime(TimeOnly.MinValue),
+            TimeOnly time => time.ToTimeSpan(),
+            _ => value
+        };
 }
