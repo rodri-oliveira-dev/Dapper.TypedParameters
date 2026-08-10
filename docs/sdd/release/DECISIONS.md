@@ -26,3 +26,8 @@
 17. PackageIdAvailability: externally verified on NuGet.org public APIs; no
     existing package found for `TypedParameters.Dapper.SqlServer` during prompt
     013.
+18. PackageConsumptionValidation: CI must validate that the generated
+    `TypedParameters.Dapper.SqlServer` `.nupkg` is consumed by external
+    `net8.0` and `net10.0` applications through a local NuGet source, package
+    source mapping, an isolated `NUGET_PACKAGES` cache, exact version restore,
+    and hash comparison against the local package.

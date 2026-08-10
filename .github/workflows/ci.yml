@@ -123,6 +123,10 @@ jobs:
         shell: pwsh
         run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
 
+      - name: Validate package consumption
+        shell: pwsh
+        run: ./scripts/Test-PackageConsumption.ps1 -PackageDirectory artifacts/packages
+
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
