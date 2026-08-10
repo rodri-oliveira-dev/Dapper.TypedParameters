@@ -1,8 +1,8 @@
 NuGetOwner: rodri-oliveira-dev
 NuGetOwnershipType: Individual
 
-GitHubEnvironment: PENDING
-NuGetTrustedPublishingPolicy: PENDING
+GitHubEnvironment: COMPLETED
+NuGetTrustedPublishingPolicy: COMPLETED
 
 RepositoryOwner: rodri-oliveira-dev
 Repository: Dapper.TypedParameters
@@ -10,7 +10,7 @@ Repository: Dapper.TypedParameters
 WorkflowFile: release.yml
 EnvironmentName: nuget-release
 
-HumanVerification: PENDING
+HumanVerification: COMPLETED
 
 After this prompt is completed and committed, the repository owner must
 configure the GitHub environment and NuGet Trusted Publishing policy,

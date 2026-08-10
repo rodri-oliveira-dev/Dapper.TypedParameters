@@ -39,3 +39,11 @@
 24. GitHub environment: `nuget-release`.
 25. Workflow: `.github/workflows/release.yml`.
 26. Long-lived API key: Forbidden for normal release flow.
+27. Prompt 016 external setup evidence: `GitHubEnvironment`,
+    `NuGetTrustedPublishingPolicy`, and `HumanVerification` recorded as
+    `COMPLETED` by the repository owner in `EXTERNAL-SETUP.md`.
+28. Prompt 016 Package ID status: available for first publication on NuGet.org
+    public APIs at audit time.
+29. Prompt 016 release readiness: `READY FOR PREVIEW RELEASE`.
+30. Package published during Prompt 016: No.
+31. Push, pull request, and tag during Prompt 016: No.
