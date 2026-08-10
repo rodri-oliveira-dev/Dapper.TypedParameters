@@ -10,7 +10,12 @@ The repository may host typed-parameter packages for additional database provide
 
 ## Decision
 
-- The first package is named `Dapper.TypedParameters.SqlServer`.
+- The first package originally used the working identity
+  `Dapper.TypedParameters.SqlServer`.
+- The final public NuGet Package ID is defined by
+  [0005 - Package identity and release policy](0005-package-identity-and-release-policy.md):
+  `TypedParameters.Dapper.SqlServer`.
+- The assembly and namespace remain `Dapper.TypedParameters.SqlServer`.
 - It supports `Microsoft.Data.SqlClient` only.
 - `System.Data.SqlClient` is not supported.
 - The public factory is named `SqlParam`.

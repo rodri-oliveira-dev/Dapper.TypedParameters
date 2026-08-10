@@ -5,28 +5,42 @@ artifacts/
 
 # Test output
 TestResults/
+**/TestResults/
 *.trx
 *.coverage
 *.coveragexml
+coverage/
+/coverage-*/
+/coverage.*
+CodeCoverage/
 
-# IDEs
+# IDEs and local workspace state
 .vs/
 .idea/
-.vscode/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
 
-# NuGet
-*.nupkg
-*.snupkg
+# Local .NET/NuGet caches and diagnostics
+.dotnet/
+.dotnet-home/
 .nuget/
 packages/
+project.lock.json
+project.fragment.lock.json
+*.binlog
+*.nupkg
+*.snupkg
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+~$*
+*~
 
 # Operating systems
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
+Desktop.ini

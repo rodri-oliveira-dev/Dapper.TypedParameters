@@ -8,9 +8,35 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-test:
+  dependency-review:
+    name: Dependency review
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+
+  validate:
+    name: Validate ${{ matrix.framework }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        framework:
+          - net8.0
+          - net10.0
 
     steps:
       - name: Checkout
@@ -19,13 +45,98 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.302
 
       - name: Restore
         run: dotnet restore Dapper.TypedParameters.sln
 
       - name: Build
-        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
+        run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test Dapper.TypedParameters.sln --configuration Release --no-build --verbosity normal
+      - name: Test unit
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/unit/${{ matrix.framework }}
+
+      - name: Upload unit coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit-${{ matrix.framework }}
+          path: artifacts/coverage/unit/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
+
+      - name: Docker diagnostics
+        run: |
+          docker version
+          docker info
+
+      - name: Test integration
+        env:
+          ACCEPT_EULA: "Y"
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/integration/${{ matrix.framework }}
+
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration-${{ matrix.framework }}
+          path: artifacts/coverage/integration/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
+
+  pack:
+    name: Pack NuGet artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Restore
+        run: dotnet restore Dapper.TypedParameters.sln
+
+      - name: Pack
+        run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-restore --output artifacts/packages
+
+      - name: Validate package contents
+        shell: pwsh
+        run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
+
+      - name: Validate package consumption
+        shell: pwsh
+        run: ./scripts/Test-PackageConsumption.ps1 -PackageDirectory artifacts/packages
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+      - name: Upload symbol package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-symbol-package
+          path: artifacts/packages/*.snupkg
+          if-no-files-found: error
