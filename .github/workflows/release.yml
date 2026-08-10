@@ -1,0 +1,245 @@
+name: NuGet Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: NuGet package version to validate and optionally publish.
+        required: true
+        default: 0.1.0-preview.1
+        type: string
+      publish:
+        description: Publish to NuGet.org. Leave false for rehearsal.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.package_version }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate ${{ matrix.framework }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        framework:
+          - net8.0
+          - net10.0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Validate requested version
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.package_version }}'
+          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
+            throw "package_version '$version' is not an allowed NuGet release version."
+          }
+
+      - name: Restore
+        run: dotnet restore Dapper.TypedParameters.sln
+
+      - name: Build
+        run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore -p:PackageVersion=${{ inputs.package_version }}
+
+      - name: Test unit
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Docker diagnostics
+        run: |
+          docker version
+          docker info
+
+      - name: Test integration
+        env:
+          ACCEPT_EULA: "Y"
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+  package:
+    name: Package and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: validate
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Validate requested version
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.package_version }}'
+          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
+            throw "package_version '$version' is not an allowed NuGet release version."
+          }
+
+      - name: Restore
+        run: dotnet restore Dapper.TypedParameters.sln
+
+      - name: Build
+        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore -p:PackageVersion=${{ inputs.package_version }}
+
+      - name: Pack
+        run: >
+          dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
+          --configuration Release
+          --no-build
+          --output artifacts/packages
+          -p:PackageVersion=${{ inputs.package_version }}
+
+      - name: Validate package compatibility
+        run: >
+          dotnet msbuild src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
+          -target:RunPackageValidation
+          -property:Configuration=Release
+          -property:NoBuild=true
+          -property:PackageVersion=${{ inputs.package_version }}
+
+      - name: Validate expected artifacts
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.package_version }}'
+          $package = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.nupkg"
+          $symbols = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.snupkg"
+
+          if (-not (Test-Path -LiteralPath $package)) {
+            throw "Expected package was not created: $package"
+          }
+
+          if (-not (Test-Path -LiteralPath $symbols)) {
+            throw "Expected symbol package was not created: $symbols"
+          }
+
+          $extraPackages = @(
+            Get-ChildItem -LiteralPath artifacts/packages -File -Filter *.nupkg
+            Get-ChildItem -LiteralPath artifacts/packages -File -Filter *.snupkg
+          )
+          if ($extraPackages.Count -ne 2) {
+            $names = $extraPackages.Name -join ', '
+            throw "Expected exactly one .nupkg and one .snupkg, found $($extraPackages.Count): $names"
+          }
+
+      - name: Validate package contents
+        shell: pwsh
+        run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
+
+      - name: Validate package consumption
+        shell: pwsh
+        run: ./scripts/Test-PackageConsumption.ps1 -PackageDirectory artifacts/packages
+
+      - name: Upload NuGet package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-package-${{ inputs.package_version }}
+          path: artifacts/packages/TypedParameters.Dapper.SqlServer.${{ inputs.package_version }}.nupkg
+          if-no-files-found: error
+
+      - name: Upload symbol package
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget-symbol-package-${{ inputs.package_version }}
+          path: artifacts/packages/TypedParameters.Dapper.SqlServer.${{ inputs.package_version }}.snupkg
+          if-no-files-found: error
+
+  publish:
+    name: Publish to NuGet.org
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: package
+    if: ${{ inputs.publish }}
+    environment: nuget-release
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download NuGet package
+        uses: actions/download-artifact@v8
+        with:
+          name: nuget-package-${{ inputs.package_version }}
+          path: artifacts/packages
+
+      - name: Download symbol package
+        uses: actions/download-artifact@v8
+        with:
+          name: nuget-symbol-package-${{ inputs.package_version }}
+          path: artifacts/packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Verify release ref and artifacts
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.package_version }}'
+          $expectedRef = "refs/tags/v$version"
+
+          if ('${{ github.ref }}' -ne $expectedRef) {
+            throw "Publishing requires ref '$expectedRef'. Current ref is '${{ github.ref }}'."
+          }
+
+          $package = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.nupkg"
+          $symbols = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.snupkg"
+
+          if (-not (Test-Path -LiteralPath $package)) {
+            throw "Validated package artifact was not downloaded: $package"
+          }
+
+          if (-not (Test-Path -LiteralPath $symbols)) {
+            throw "Validated symbol package artifact was not downloaded: $symbols"
+          }
+
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: rodri-oliveira-dev
+
+      - name: Push package
+        run: >
+          dotnet nuget push
+          artifacts/packages/TypedParameters.Dapper.SqlServer.${{ inputs.package_version }}.nupkg
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
