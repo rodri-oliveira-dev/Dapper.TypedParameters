@@ -15,7 +15,8 @@ Prompts must run in this order:
 5. `010-table-valued-parameters`
 6. `011-package-quality`
 7. `012-conceptual-documentation`
-8. `013-package-release-policy`
+8. Release preparation continues in `docs/sdd/release/` starting with
+   `013-package-release-policy`.
 
 Each prompt must run in a separate chat without relying on memory from previous chats.
 

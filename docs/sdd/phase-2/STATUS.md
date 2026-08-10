@@ -2,7 +2,8 @@ Last completed prompt: 012
 Current status: Completed
 Branch: build/package-quality
 Last expected commit: docs: explain typed parameter use cases
-Next prompt: 013-package-release-policy
+Next prompt: release phase
+Release phase handoff: ../release/STATUS.md
 Documentation canonical language: English
 Portuguese README: README.pt-BR.md
 Push performed: No

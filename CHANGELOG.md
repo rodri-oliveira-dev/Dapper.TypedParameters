@@ -29,12 +29,17 @@
   acidentais de contrato.
 - Adiciona cobertura Cobertura na CI, inspecao de conteudo do pacote,
   dependency review em PR e benchmarks manuais com BenchmarkDotNet.
+- Define o Package ID NuGet planejado como `TypedParameters.Dapper.SqlServer`,
+  preservando assembly e namespace `Dapper.TypedParameters.SqlServer`.
+- Ajusta `Microsoft.Data.SqlClient` para `6.1.6`.
+- Documenta politica de compatibilidade do driver para SQL Server 2016 a 2025,
+  Azure SQL Database, Azure SQL Managed Instance e Azure Synapse Analytics.
 
 ## 0.1.0-preview.1
 
-- Primeiro escopo preview do pacote planejado `Dapper.TypedParameters.SqlServer`.
+- Primeiro escopo preview do pacote planejado `TypedParameters.Dapper.SqlServer`.
 - Documenta parametros string SQL Server explicitamente tipados para Dapper.
 - Inclui `varchar`, `nvarchar`, `char`, `nchar`, `varchar(max)` e `nvarchar(max)`.
 - Suporta assets para `net8.0` e `net10.0` com a mesma API publica.
-- Usa `Dapper` `2.1.79` e `Microsoft.Data.SqlClient` `7.0.2`.
+- Usa `Dapper` `2.1.79` e `Microsoft.Data.SqlClient` `6.1.6`.
 - Mantem suporte restrito a `Microsoft.Data.SqlClient`; `System.Data.SqlClient` nao e suportado.

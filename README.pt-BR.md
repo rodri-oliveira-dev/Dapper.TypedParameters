@@ -114,16 +114,25 @@ Para testá-lo localmente a partir deste repositório:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
-dotnet add package Dapper.TypedParameters.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
+dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
 ```
 
-O Package ID configurado atualmente é:
+Package ID NuGet planejado:
 
 ```text
-Dapper.TypedParameters.SqlServer
+TypedParameters.Dapper.SqlServer
 ```
 
-Política de release final e publicação pública do pacote são decisões separadas.
+O pacote tem uma identidade NuGet distinta da identidade do assembly e do
+namespace C#:
+
+```text
+Pacote NuGet: TypedParameters.Dapper.SqlServer
+Assembly: Dapper.TypedParameters.SqlServer.dll
+Namespace: Dapper.TypedParameters.SqlServer
+```
+
+A publicação pública do pacote é uma etapa de release separada.
 
 ## Quick start
 
@@ -172,13 +181,18 @@ public static async Task<Customer?> FindCustomerAsync(
 | --- | --- |
 | Target frameworks | `net8.0`; `net10.0` |
 | Dapper | `2.1.79` |
-| Microsoft.Data.SqlClient | `7.0.2` |
+| Microsoft.Data.SqlClient | `6.1.6` |
 | Provider ADO.NET | Somente `Microsoft.Data.SqlClient` |
 | System.Data.SqlClient | Não suportado |
-| SQL Server | Tipos do provider SQL Server; matriz formal pendente |
+| Alvo declarado de compatibilidade do driver | SQL Server 2016 até SQL Server 2025 |
+| SQL Server testado pela CI | SQL Server 2022 via `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04` |
+| Azure SQL Database | Compatível pelo driver; não testado por integração neste repositório |
+| Azure SQL Managed Instance | Compatível pelo driver; não testado por integração neste repositório |
+| Azure Synapse Analytics | Compatível pelo driver; não testado por integração neste repositório |
 
-A matriz formal de suporte a SQL Server será definida antes da primeira
-publicação pública do pacote.
+As entradas de SQL Server e Azure SQL acima descrevem compatibilidade do driver
+`Microsoft.Data.SqlClient`. Este repositório atualmente executa testes de
+integração apenas na imagem SQL Server 2022 listada na tabela.
 
 ## Por que tipos SQL explícitos podem importar
 

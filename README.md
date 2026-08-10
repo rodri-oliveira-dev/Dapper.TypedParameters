@@ -113,16 +113,25 @@ To test it locally from this repository:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
-dotnet add package Dapper.TypedParameters.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
+dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
 ```
 
-The currently configured Package ID is:
+Planned NuGet package ID:
 
 ```text
-Dapper.TypedParameters.SqlServer
+TypedParameters.Dapper.SqlServer
 ```
 
-Final release policy and public package publication are separate decisions.
+The package has a NuGet identity that is distinct from its assembly and C#
+namespace identity:
+
+```text
+NuGet package: TypedParameters.Dapper.SqlServer
+Assembly: Dapper.TypedParameters.SqlServer.dll
+Namespace: Dapper.TypedParameters.SqlServer
+```
+
+Public package publication is a separate release step.
 
 ## Quick start
 
@@ -171,13 +180,18 @@ public static async Task<Customer?> FindCustomerAsync(
 | --- | --- |
 | Target frameworks | `net8.0`; `net10.0` |
 | Dapper | `2.1.79` |
-| Microsoft.Data.SqlClient | `7.0.2` |
+| Microsoft.Data.SqlClient | `6.1.6` |
 | ADO.NET provider | `Microsoft.Data.SqlClient` only |
 | System.Data.SqlClient | Not supported |
-| SQL Server | SQL Server provider types; formal support matrix pending |
+| Declared driver compatibility target | SQL Server 2016 through SQL Server 2025 |
+| CI-tested SQL Server | SQL Server 2022 through `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04` |
+| Azure SQL Database | Driver-compatible; not integration-tested by this repository |
+| Azure SQL Managed Instance | Driver-compatible; not integration-tested by this repository |
+| Azure Synapse Analytics | Driver-compatible; not integration-tested by this repository |
 
-The formal SQL Server support matrix will be defined before the first public
-package release.
+The SQL Server and Azure SQL entries above describe `Microsoft.Data.SqlClient`
+driver compatibility. This repository currently integration-tests only the SQL
+Server 2022 container image listed in the table.
 
 ## Why explicit SQL types can matter
 

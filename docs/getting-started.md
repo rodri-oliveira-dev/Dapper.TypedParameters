@@ -15,6 +15,19 @@ This guide shows the basic Dapper patterns with
 - A SQL Server database.
 - A local package build until the package is published to NuGet.
 
+Until the package is published, consume it from a local package source using
+the planned NuGet Package ID:
+
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
+```
+
+The C# namespace remains:
+
+```csharp
+using Dapper.TypedParameters.SqlServer;
+```
+
 ## Imports
 
 ```csharp

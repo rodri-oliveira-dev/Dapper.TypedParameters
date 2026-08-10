@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $PackageDirectory,
 
-    [string] $PackageId = "Dapper.TypedParameters.SqlServer",
+    [string] $PackageId = "TypedParameters.Dapper.SqlServer",
+
+    [string] $AssemblyName = "Dapper.TypedParameters.SqlServer",
 
     [string] $RepositoryUrl = "https://github.com/rodri-oliveira-dev/Dapper.TypedParameters"
 )
@@ -95,7 +97,7 @@ function Test-SourceLinkMetadata {
     )
 
     foreach ($tfm in @('net8.0', 'net10.0')) {
-        $pdbEntry = "lib/$tfm/$PackageId.pdb"
+        $pdbEntry = "lib/$tfm/$AssemblyName.pdb"
         Assert-EntryExists $Entries $pdbEntry
 
         $pdbPath = Join-Path $Root $pdbEntry
@@ -128,9 +130,9 @@ try {
         ForEach-Object { $_.FullName.Substring($symbolRoot.Length + 1).Replace('\', '/') }
 
     foreach ($tfm in @('net8.0', 'net10.0')) {
-        Assert-EntryExists $entries "lib/$tfm/$PackageId.dll"
-        Assert-EntryExists $entries "lib/$tfm/$PackageId.xml"
-        Assert-EntryExists $symbolEntries "lib/$tfm/$PackageId.pdb"
+        Assert-EntryExists $entries "lib/$tfm/$AssemblyName.dll"
+        Assert-EntryExists $entries "lib/$tfm/$AssemblyName.xml"
+        Assert-EntryExists $symbolEntries "lib/$tfm/$AssemblyName.pdb"
     }
 
     Assert-EntryExists $entries "README.md"
