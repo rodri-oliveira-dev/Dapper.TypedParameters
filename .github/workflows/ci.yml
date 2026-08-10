@@ -13,6 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+
   validate:
     name: Validate ${{ matrix.framework }}
     runs-on: ubuntu-latest
@@ -43,7 +56,21 @@ jobs:
         run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore
 
       - name: Test unit
-        run: dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/unit/${{ matrix.framework }}
+
+      - name: Upload unit coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit-${{ matrix.framework }}
+          path: artifacts/coverage/unit/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
 
       - name: Docker diagnostics
         run: |
@@ -53,7 +80,21 @@ jobs:
       - name: Test integration
         env:
           ACCEPT_EULA: "Y"
-        run: dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/integration/${{ matrix.framework }}
+
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration-${{ matrix.framework }}
+          path: artifacts/coverage/integration/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
 
   pack:
     name: Pack NuGet artifact
@@ -78,9 +119,20 @@ jobs:
       - name: Pack
         run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-restore --output artifacts/packages
 
+      - name: Validate package contents
+        shell: pwsh
+        run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
+
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: nuget-package
           path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+      - name: Upload symbol package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-symbol-package
+          path: artifacts/packages/*.snupkg
           if-no-files-found: error

@@ -29,3 +29,10 @@
 25. Empty `DataTable` values are supported; null `DataTable` values are rejected.
 26. The library does not infer TVP schema, validate table columns against SQL Server, or map POCOs.
 27. No `IEnumerable<Microsoft.Data.SqlClient.Server.SqlDataRecord>` overload is added in prompt 010.
+28. Package quality uses `Microsoft.SourceLink.GitHub`, SDK `.snupkg` symbols, deterministic builds, repository metadata, and CI-aware `ContinuousIntegrationBuild`.
+29. Accidental public API changes are guarded by `Microsoft.CodeAnalysis.PublicApiAnalyzers` with `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`.
+30. Package API compatibility is validated with SDK package validation and strict compatible TFM checks; no published-package baseline is configured until a real published baseline exists.
+31. Coverage uses the existing `coverlet.collector` and uploads Cobertura artifacts by suite and TFM; no threshold is set before measuring and agreeing on an evolution rule.
+32. Benchmarks are isolated in a BenchmarkDotNet project and a manual workflow; full benchmark measurements are not part of pull request CI.
+33. Dependency diagnostics use Central Package Management, NuGet audit, explicit vulnerability listing during validation, and GitHub dependency review on pull requests.
+34. Restore locked mode is deferred until the repository makes a clear lock-file maintenance decision.

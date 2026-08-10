@@ -700,7 +700,67 @@ dotnet test Dapper.TypedParameters.sln --framework net10.0 --configuration Relea
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output ./artifacts/packages
 ```
 
+O `pack` gera o pacote NuGet `.nupkg` e o pacote de simbolos `.snupkg`. O
+pacote usa SourceLink para GitHub, metadata de repositorio, README empacotado,
+licenca MIT por expressao e XML documentation para `net8.0` e `net10.0`.
+
+Para validar localmente o conteudo do pacote gerado:
+
+```bash
+pwsh ./scripts/Test-PackageContents.ps1 -PackageDirectory ./artifacts/packages
+```
+
+Essa validacao confere assets para `net8.0` e `net10.0`, XML documentation,
+README, licenca, repository URL, dependencias, simbolos, SourceLink basico e
+ausencia de DLLs de teste, arquivos `bin`/`obj`, temporarios e padroes obvios
+de segredo.
+
+Mudancas acidentais na API publica sao verificadas por PublicApiAnalyzers em:
+
+```text
+src/Dapper.TypedParameters.SqlServer/PublicAPI.Shipped.txt
+src/Dapper.TypedParameters.SqlServer/PublicAPI.Unshipped.txt
+```
+
+Ao alterar intencionalmente a API publica, atualize esses arquivos na mesma
+mudanca e documente a decisao.
+
+Para gerar cobertura local:
+
+```bash
+dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults/coverage/unit
+dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults/coverage/integration
+```
+
+Nao ha threshold de cobertura neste preview; primeiro a cobertura atual deve
+ser medida e revisada.
+
 Os testes de integracao usam SQL Server real em container por meio de `Testcontainers.MsSql` e da imagem oficial `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04`. Para executa-los, Docker precisa estar disponivel e apto a iniciar containers Linux de SQL Server. A suite falha quando Docker ou SQL Server nao estao disponiveis.
+
+## Benchmarks
+
+Benchmarks locais ficam em:
+
+```text
+benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks/
+```
+
+Eles usam BenchmarkDotNet e cobrem criacao de parametros, materializacao em
+`SqlCommand`, string, decimal, binario e TVP pequeno. Eles nao exigem SQL Server.
+
+Para compilar:
+
+```bash
+dotnet build benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks.csproj --configuration Release
+```
+
+Para executar manualmente:
+
+```bash
+dotnet run --project benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks.csproj --configuration Release --framework net8.0 -- --filter '*'
+```
+
+Benchmarks completos nao rodam automaticamente em pull requests.
 
 ## Roadmap
 

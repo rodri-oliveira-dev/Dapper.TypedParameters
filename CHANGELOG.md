@@ -18,6 +18,11 @@
   `DataTable` fornecido pelo chamador.
 - Suporta `DataTable` vazio para TVPs e rejeita tabela nula.
 - Mantem API equivalente para `net8.0` e `net10.0`.
+- Configura SourceLink para GitHub e geracao de simbolos `.snupkg`.
+- Adiciona analise de API publica e package validation para evitar mudancas
+  acidentais de contrato.
+- Adiciona cobertura Cobertura na CI, inspecao de conteudo do pacote,
+  dependency review em PR e benchmarks manuais com BenchmarkDotNet.
 
 ## 0.1.0-preview.1
 
