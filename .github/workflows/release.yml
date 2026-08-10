@@ -49,8 +49,10 @@ jobs:
 
       - name: Validate requested version
         shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
         run: |
-          $version = '${{ inputs.package_version }}'
+          $version = $env:PACKAGE_VERSION
           if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
             throw "package_version '$version' is not an allowed NuGet release version."
           }
@@ -59,7 +61,9 @@ jobs:
         run: dotnet restore Dapper.TypedParameters.sln
 
       - name: Build
-        run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore -p:PackageVersion=${{ inputs.package_version }}
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
+        run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore "-p:PackageVersion=${PACKAGE_VERSION}"
 
       - name: Test unit
         run: >
@@ -105,8 +109,10 @@ jobs:
 
       - name: Validate requested version
         shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
         run: |
-          $version = '${{ inputs.package_version }}'
+          $version = $env:PACKAGE_VERSION
           if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
             throw "package_version '$version' is not an allowed NuGet release version."
           }
@@ -115,28 +121,36 @@ jobs:
         run: dotnet restore Dapper.TypedParameters.sln
 
       - name: Build
-        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore -p:PackageVersion=${{ inputs.package_version }}
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
+        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore "-p:PackageVersion=${PACKAGE_VERSION}"
 
       - name: Pack
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
         run: >
           dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
           --configuration Release
           --no-build
           --output artifacts/packages
-          -p:PackageVersion=${{ inputs.package_version }}
+          "-p:PackageVersion=${PACKAGE_VERSION}"
 
       - name: Validate package compatibility
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
         run: >
           dotnet msbuild src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
           -target:RunPackageValidation
           -property:Configuration=Release
           -property:NoBuild=true
-          -property:PackageVersion=${{ inputs.package_version }}
+          "-property:PackageVersion=${PACKAGE_VERSION}"
 
       - name: Validate expected artifacts
         shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
         run: |
-          $version = '${{ inputs.package_version }}'
+          $version = $env:PACKAGE_VERSION
           $package = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.nupkg"
           $symbols = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.snupkg"
 
@@ -191,6 +205,16 @@ jobs:
       id-token: write
 
     steps:
+      - name: Validate requested version
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
+        run: |
+          $version = $env:PACKAGE_VERSION
+          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
+            throw "package_version '$version' is not an allowed NuGet release version."
+          }
+
       - name: Download NuGet package
         uses: actions/download-artifact@v8
         with:
@@ -212,12 +236,14 @@ jobs:
 
       - name: Verify release ref and artifacts
         shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
         run: |
-          $version = '${{ inputs.package_version }}'
+          $version = $env:PACKAGE_VERSION
           $expectedRef = "refs/tags/v$version"
 
-          if ('${{ github.ref }}' -ne $expectedRef) {
-            throw "Publishing requires ref '$expectedRef'. Current ref is '${{ github.ref }}'."
+          if ($env:GITHUB_REF -ne $expectedRef) {
+            throw "Publishing requires ref '$expectedRef'. Current ref is '$env:GITHUB_REF'."
           }
 
           $package = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.nupkg"
@@ -238,8 +264,11 @@ jobs:
           user: rodri-oliveira-dev
 
       - name: Push package
+        env:
+          PACKAGE_VERSION: ${{ inputs.package_version }}
+          TEMPORARY_NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: >
           dotnet nuget push
-          artifacts/packages/TypedParameters.Dapper.SqlServer.${{ inputs.package_version }}.nupkg
-          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          "artifacts/packages/TypedParameters.Dapper.SqlServer.${PACKAGE_VERSION}.nupkg"
+          --api-key "${TEMPORARY_NUGET_API_KEY}"
           --source https://api.nuget.org/v3/index.json

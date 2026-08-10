@@ -276,9 +276,10 @@ Confirmed:
 - `README.pt-BR.md` links back to `README.md`.
 - English docs link to Portuguese counterparts.
 - Portuguese docs link to English counterparts.
-- `README.md` says: "The package has not been published to NuGet yet."
-- `README.pt-BR.md` also states that the package has not been published to
-  NuGet.
+- `README.md` contains publication-safe NuGet.org installation guidance and
+  separate local unreleased build instructions.
+- `README.pt-BR.md` contains equivalent publication-safe NuGet.org installation
+  guidance and separate local unreleased build instructions.
 - Getting started docs describe local package consumption until publication.
 - Documentation distinguishes declared driver compatibility from CI-tested SQL
   Server coverage.

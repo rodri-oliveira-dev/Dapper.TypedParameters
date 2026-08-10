@@ -107,16 +107,20 @@ explicit correspondence with the schema, not preference for a specific SQL type.
 
 ## Installation
 
-The package has not been published to NuGet yet.
+Install from NuGet.org after the package is published:
 
-To test it locally from this repository:
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1
+```
+
+To test an unreleased local build from this repository:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
 dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
 ```
 
-Planned NuGet package ID:
+NuGet package ID:
 
 ```text
 TypedParameters.Dapper.SqlServer
@@ -131,7 +135,8 @@ Assembly: Dapper.TypedParameters.SqlServer.dll
 Namespace: Dapper.TypedParameters.SqlServer
 ```
 
-Public package publication is a separate release step.
+If NuGet.org does not yet contain the requested version, use the local build
+instructions above or wait for the release workflow to publish that version.
 
 ## Quick start
 

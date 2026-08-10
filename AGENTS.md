@@ -5,7 +5,7 @@
 Este repositorio contem uma biblioteca publica .NET para criacao explicita de parametros SQL Server no Dapper.
 
 - Provider inicial exclusivo: `Microsoft.Data.SqlClient`.
-- Pacote NuGet: `Dapper.TypedParameters.SqlServer`.
+- Pacote NuGet: `TypedParameters.Dapper.SqlServer`.
 - A API publica deve permanecer pequena, explicita e previsivel.
 - A biblioteca deve considerar compatibilidade futura com `net8.0` e `net10.0`.
 

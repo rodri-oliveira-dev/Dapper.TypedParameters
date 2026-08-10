@@ -108,16 +108,20 @@ específico.
 
 ## Instalação
 
-O pacote ainda não foi publicado no NuGet.
+Instale pelo NuGet.org depois que o pacote for publicado:
 
-Para testá-lo localmente a partir deste repositório:
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1
+```
+
+Para testar uma build local ainda não publicada a partir deste repositório:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
 dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
 ```
 
-Package ID NuGet planejado:
+Package ID NuGet:
 
 ```text
 TypedParameters.Dapper.SqlServer
@@ -132,7 +136,8 @@ Assembly: Dapper.TypedParameters.SqlServer.dll
 Namespace: Dapper.TypedParameters.SqlServer
 ```
 
-A publicação pública do pacote é uma etapa de release separada.
+Se o NuGet.org ainda não contiver a versão solicitada, use as instruções de
+build local acima ou aguarde o workflow de release publicar essa versão.
 
 ## Quick start
 
