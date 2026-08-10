@@ -219,15 +219,15 @@ biblioteca não sabe se a coluna de destino realmente é `varchar(11)`.
 
 ## Documentação
 
-- [Getting started](docs/getting-started.md)
-- [Motivation](docs/motivation.md)
+- [Primeiros passos](docs/getting-started.pt-BR.md)
+- [Motivação](docs/motivation.pt-BR.md)
 - Exemplos:
-  - [Strings](docs/examples/strings.md)
-  - [Numeric](docs/examples/numeric.md)
-  - [Binary and identifiers](docs/examples/binary.md)
-  - [Temporal](docs/examples/temporal.md)
-  - [Output parameters](docs/examples/output-parameters.md)
-  - [Table-valued parameters](docs/examples/table-valued-parameters.md)
+  - [Strings](docs/examples/strings.pt-BR.md)
+  - [Numéricos](docs/examples/numeric.pt-BR.md)
+  - [Binários e identificadores](docs/examples/binary.pt-BR.md)
+  - [Temporais](docs/examples/temporal.pt-BR.md)
+  - [Parâmetros de saída](docs/examples/output-parameters.pt-BR.md)
+  - [Table-valued parameters](docs/examples/table-valued-parameters.pt-BR.md)
 - [English](README.md)
 
 ## Testes

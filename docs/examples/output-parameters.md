@@ -1,5 +1,7 @@
 # Output Parameters
 
+[English](output-parameters.md) | [Português (Brasil)](output-parameters.pt-BR.md)
+
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
 Scalar parameters can be configured as `Output` or `InputOutput` with fluent

@@ -1,19 +1,19 @@
-# Getting Started
+# Primeiros Passos
 
-[English](getting-started.md) | [Português (Brasil)](getting-started.pt-BR.md)
+[English](getting-started.md) | Português (Brasil)
 
-[Back to README](../README.md) | [Motivation](motivation.md)
+[Voltar ao README](../README.pt-BR.md) | [Motivação](motivation.pt-BR.md)
 
-This guide shows the basic Dapper patterns with
+Este guia mostra padrões básicos de Dapper com
 `Dapper.TypedParameters.SqlServer`.
 
-## Prerequisites
+## Pré-requisitos
 
-- A project targeting `net8.0` or `net10.0`.
+- Um projeto com `net8.0` ou `net10.0`.
 - Dapper.
 - `Microsoft.Data.SqlClient`.
-- A SQL Server database.
-- A local package build until the package is published to NuGet.
+- Um banco SQL Server.
+- Um pacote local enquanto o pacote ainda não estiver publicado no NuGet.
 
 ## Imports
 
@@ -23,14 +23,14 @@ using Dapper.TypedParameters.SqlServer;
 using Microsoft.Data.SqlClient;
 ```
 
-## Create a connection
+## Criar uma conexão
 
 ```csharp
 await using var connection = new SqlConnection(connectionString);
 await connection.OpenAsync();
 ```
 
-## First SELECT
+## Primeiro SELECT
 
 ```csharp
 var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
@@ -87,7 +87,7 @@ int rows = await connection.ExecuteAsync(
     });
 ```
 
-## Null Values
+## Valores null
 
 ```csharp
 await connection.ExecuteAsync(
@@ -103,13 +103,13 @@ await connection.ExecuteAsync(
     });
 ```
 
-`null` is converted to `DBNull.Value` when the parameter is materialized for
+`null` é convertido para `DBNull.Value` quando o parâmetro é materializado para
 `Microsoft.Data.SqlClient`.
 
-## Async execution
+## Execução async
 
-The library implements Dapper's `SqlMapper.ICustomQueryParameter`, so it works
-with normal Dapper async methods:
+A biblioteca implementa `SqlMapper.ICustomQueryParameter` do Dapper, então
+funciona com os métodos async normais do Dapper:
 
 ```csharp
 int count = await connection.QuerySingleAsync<int>(
@@ -120,7 +120,7 @@ int count = await connection.QuerySingleAsync<int>(
     });
 ```
 
-## Multiple parameters
+## Múltiplos parâmetros
 
 ```csharp
 var invoice = await connection.QuerySingleAsync<Invoice>(
@@ -137,11 +137,11 @@ var invoice = await connection.QuerySingleAsync<Invoice>(
     });
 ```
 
-## Specialized examples
+## Exemplos especializados
 
-- [Strings](examples/strings.md)
-- [Numeric](examples/numeric.md)
-- [Binary and identifiers](examples/binary.md)
-- [Temporal](examples/temporal.md)
-- [Output parameters](examples/output-parameters.md)
-- [Table-valued parameters](examples/table-valued-parameters.md)
+- [Strings](examples/strings.pt-BR.md)
+- [Numéricos](examples/numeric.pt-BR.md)
+- [Binários e identificadores](examples/binary.pt-BR.md)
+- [Temporais](examples/temporal.pt-BR.md)
+- [Parâmetros de saída](examples/output-parameters.pt-BR.md)
+- [Table-valued parameters](examples/table-valued-parameters.pt-BR.md)

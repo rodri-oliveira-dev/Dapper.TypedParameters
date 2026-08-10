@@ -1,5 +1,7 @@
 # String Parameters
 
+[English](strings.md) | [Português (Brasil)](strings.pt-BR.md)
+
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
 String factories declare SQL Server string metadata explicitly.

@@ -1,13 +1,13 @@
-# Numeric Parameters
+# Parâmetros Numéricos
 
-[English](numeric.md) | [Português (Brasil)](numeric.pt-BR.md)
+[English](numeric.md) | Português (Brasil)
 
-[Back to README](../../README.md) | [Getting started](../getting-started.md)
+[Voltar ao README](../../README.pt-BR.md) | [Primeiros passos](../getting-started.pt-BR.md)
 
-Numeric factories declare SQL Server numeric and boolean types without relying
-on value inference.
+Factories numéricas declaram tipos SQL Server numéricos e booleanos sem depender
+de inferência pelo valor.
 
-| Factory | SQL Server type |
+| Factory | Tipo SQL Server |
 | --- | --- |
 | `SqlParam.Bit(value)` | `bit` |
 | `SqlParam.TinyInt(value)` | `tinyint` |
@@ -20,7 +20,7 @@ on value inference.
 | `SqlParam.Money(value)` | `money` |
 | `SqlParam.SmallMoney(value)` | `smallmoney` |
 
-## Integers and bit
+## Inteiros e bit
 
 ```csharp
 await connection.ExecuteAsync(
@@ -36,7 +36,7 @@ await connection.ExecuteAsync(
     });
 ```
 
-## Decimal precision and scale
+## Precisão e escala de decimal
 
 ```csharp
 await connection.ExecuteAsync(
@@ -51,13 +51,13 @@ await connection.ExecuteAsync(
     });
 ```
 
-`precision` must be 1 through 38. `scale` must be 0 through `precision`.
+`precision` deve estar entre 1 e 38. `scale` deve estar entre 0 e `precision`.
 
-The library does not manually round decimal values. Valid conversions, rounding,
-and range behavior during execution remain owned by `Microsoft.Data.SqlClient`
-and SQL Server.
+A biblioteca não arredonda valores decimal manualmente. Conversões válidas,
+arredondamento e comportamento de faixa durante a execução continuam sob
+responsabilidade de `Microsoft.Data.SqlClient` e do SQL Server.
 
-## Floating-point and money
+## Ponto flutuante e dinheiro
 
 ```csharp
 Temperature = SqlParam.Real(23.5F)
@@ -66,13 +66,13 @@ Price = SqlParam.Money(12.34M)
 Fee = SqlParam.SmallMoney(1.23M)
 ```
 
-Use these factories only when the database contract uses the corresponding SQL
-Server type.
+Use essas factories somente quando o contrato do banco usar o tipo SQL Server
+correspondente.
 
-## Null values
+## Valores null
 
 ```csharp
 Discount = SqlParam.Decimal(null, precision: 9, scale: 4)
 ```
 
-`null` is materialized as `DBNull.Value`.
+`null` é materializado como `DBNull.Value`.

@@ -1,13 +1,13 @@
-# Binary and Identifier Parameters
+# Parâmetros Binários e Identificadores
 
-[English](binary.md) | [Português (Brasil)](binary.pt-BR.md)
+[English](binary.md) | Português (Brasil)
 
-[Back to README](../../README.md) | [Getting started](../getting-started.md)
+[Voltar ao README](../../README.pt-BR.md) | [Primeiros passos](../getting-started.pt-BR.md)
 
-Binary and identifier factories cover `uniqueidentifier`, `binary`,
-`varbinary`, and `varbinary(max)`.
+Factories binárias e de identificadores cobrem `uniqueidentifier`, `binary`,
+`varbinary` e `varbinary(max)`.
 
-| Factory | SQL Server type |
+| Factory | Tipo SQL Server |
 | --- | --- |
 | `SqlParam.UniqueIdentifier(value)` | `uniqueidentifier` |
 | `SqlParam.Binary(value, size)` | `binary(size)` |
@@ -25,9 +25,9 @@ var file = await connection.QuerySingleOrDefaultAsync<FileRow>(
     });
 ```
 
-`Guid.Empty` is accepted. `null` is materialized as `DBNull.Value`.
+`Guid.Empty` é aceito. `null` é materializado como `DBNull.Value`.
 
-## binary and varbinary
+## binary e varbinary
 
 ```csharp
 await connection.ExecuteAsync(
@@ -43,7 +43,7 @@ await connection.ExecuteAsync(
     });
 ```
 
-`Binary` and `VarBinary` accept sizes from 1 to 8,000.
+`Binary` e `VarBinary` aceitam tamanhos de 1 a 8.000.
 
 ## varbinary(max)
 
@@ -51,17 +51,17 @@ await connection.ExecuteAsync(
 Payload = SqlParam.VarBinaryMax(payload)
 ```
 
-`VarBinaryMax` uses `SqlDbType.VarBinary` with `Size = -1`.
+`VarBinaryMax` usa `SqlDbType.VarBinary` com `Size = -1`.
 
-## Empty arrays and null
+## Arrays vazios e null
 
 ```csharp
 EmptyPayload = SqlParam.VarBinary(Array.Empty<byte>(), 1)
 MissingPayload = SqlParam.VarBinary(null, 1)
 ```
 
-Empty arrays remain empty arrays. Only `null` is materialized as
+Arrays vazios permanecem arrays vazios. Somente `null` é materializado como
 `DBNull.Value`.
 
-The library stores the supplied `byte[]` reference. It does not copy arrays,
-truncate content, pad content, or validate `value.Length <= size`.
+A biblioteca armazena a referência do `byte[]` fornecido. Ela não copia arrays,
+não trunca conteúdo, não faz padding e não valida `value.Length <= size`.

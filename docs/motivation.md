@@ -1,5 +1,7 @@
 # Motivation
 
+[English](motivation.md) | [Português (Brasil)](motivation.pt-BR.md)
+
 [Back to README](../README.md) | [Getting started](getting-started.md)
 
 `Dapper.TypedParameters.SqlServer` exists because the type of a SQL Server

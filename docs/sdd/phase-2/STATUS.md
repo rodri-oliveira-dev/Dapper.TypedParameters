@@ -19,4 +19,5 @@ Package published: No
   was not changed or staged.
 - Public documentation now uses English as the canonical language and
   `README.pt-BR.md` as the supported Brazilian Portuguese translation.
+- Public docs linked from `README.pt-BR.md` now have `.pt-BR.md` counterparts.
 - The next prompt is `013-package-release-policy`.

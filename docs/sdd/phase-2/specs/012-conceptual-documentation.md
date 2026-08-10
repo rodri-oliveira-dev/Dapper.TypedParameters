@@ -236,3 +236,31 @@ None. Unit and integration tests were executed for both real TFMs.
 ## Final Status
 
 Completed.
+
+## Follow-up: Portuguese Documentation Pages
+
+After the initial prompt 012 commit, the user requested Brazilian Portuguese
+versions for the documentation pages linked from the README. The follow-up adds:
+
+- `docs/getting-started.pt-BR.md`
+- `docs/motivation.pt-BR.md`
+- `docs/examples/strings.pt-BR.md`
+- `docs/examples/numeric.pt-BR.md`
+- `docs/examples/binary.pt-BR.md`
+- `docs/examples/temporal.pt-BR.md`
+- `docs/examples/output-parameters.pt-BR.md`
+- `docs/examples/table-valued-parameters.pt-BR.md`
+
+The English documents now link to their Portuguese counterparts, and
+`README.pt-BR.md` links directly to the Portuguese documentation set.
+
+Follow-up validation:
+
+- Relative Markdown link check across README and `docs/`: passed.
+- Snippet search for documented `SqlParam` APIs: reviewed against the existing
+  public API; no code changes were required.
+- Search for placeholders and unsafe absolute performance promises: no new
+  issue found.
+- `dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore`:
+  passed; 0 warnings, 0 errors.
+- `git diff --check`: passed.

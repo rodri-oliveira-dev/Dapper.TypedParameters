@@ -1,13 +1,13 @@
 # Table-Valued Parameters
 
-[English](table-valued-parameters.md) | [Português (Brasil)](table-valued-parameters.pt-BR.md)
+[English](table-valued-parameters.md) | Português (Brasil)
 
-[Back to README](../../README.md) | [Getting started](../getting-started.md)
+[Voltar ao README](../../README.pt-BR.md) | [Primeiros passos](../getting-started.pt-BR.md)
 
-Table-valued parameters use an existing SQL Server user-defined table type and a
-caller-supplied `DataTable`.
+Table-valued parameters usam um user-defined table type SQL Server existente e
+um `DataTable` fornecido pelo chamador.
 
-## Create the table type
+## Criar o table type
 
 ```sql
 CREATE TYPE dbo.CustomerBatch AS TABLE
@@ -18,9 +18,9 @@ CREATE TYPE dbo.CustomerBatch AS TABLE
 );
 ```
 
-The library does not create this type.
+A biblioteca não cria esse tipo.
 
-## Build the DataTable
+## Montar o DataTable
 
 ```csharp
 using System.Data;
@@ -33,7 +33,7 @@ customers.Rows.Add(1, "Ada Lovelace", true);
 customers.Rows.Add(2, "Grace Hopper", true);
 ```
 
-## Call Dapper
+## Chamar Dapper
 
 ```csharp
 using Dapper;
@@ -55,12 +55,12 @@ int rows = await connection.ExecuteAsync(
     });
 ```
 
-`SqlParam.TableValued(typeName, value)` materializes `SqlDbType.Structured`,
-`TypeName`, the supplied `DataTable`, and `ParameterDirection.Input`.
+`SqlParam.TableValued(typeName, value)` materializa `SqlDbType.Structured`,
+`TypeName`, o `DataTable` fornecido e `ParameterDirection.Input`.
 
-## Empty tables
+## Tabelas vazias
 
-An empty `DataTable` is supported when its columns are declared:
+Um `DataTable` vazio é suportado quando suas colunas estão declaradas:
 
 ```csharp
 using var customers = new DataTable();
@@ -71,17 +71,17 @@ customers.Columns.Add("IsActive", typeof(bool));
 var parameter = SqlParam.TableValued("dbo.CustomerBatch", customers);
 ```
 
-Use an empty table when the intended value is an empty set. A null `DataTable`
-is rejected.
+Use uma tabela vazia quando a intenção for enviar um conjunto vazio. Um
+`DataTable` nulo é rejeitado.
 
-## Schema responsibility
+## Responsabilidade pelo schema
 
-The caller is responsible for:
+O chamador é responsável por:
 
-- creating the user-defined table type;
-- choosing the correct `TypeName`;
-- building a `DataTable` whose columns match the table type;
-- handling provider or SQL Server errors for schema mismatches.
+- criar o user-defined table type;
+- escolher o `TypeName` correto;
+- montar um `DataTable` cujas colunas correspondam ao table type;
+- tratar erros do provider ou do SQL Server para divergências de schema.
 
-The library does not discover table type schema, map POCOs, query SQL Server, or
-validate columns automatically.
+A biblioteca não descobre o schema do table type, não mapeia POCOs, não consulta
+SQL Server e não valida colunas automaticamente.

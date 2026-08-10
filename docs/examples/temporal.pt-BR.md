@@ -1,13 +1,13 @@
-# Temporal Parameters
+# Parâmetros Temporais
 
-[English](temporal.md) | [Português (Brasil)](temporal.pt-BR.md)
+[English](temporal.md) | Português (Brasil)
 
-[Back to README](../../README.md) | [Getting started](../getting-started.md)
+[Voltar ao README](../../README.pt-BR.md) | [Primeiros passos](../getting-started.pt-BR.md)
 
-Temporal factories expose SQL Server date and time types using modern CLR types
-where appropriate.
+Factories temporais expõem tipos SQL Server de data e hora usando tipos CLR
+modernos quando apropriado.
 
-| Factory | SQL Server type | CLR type |
+| Factory | Tipo SQL Server | Tipo CLR |
 | --- | --- | --- |
 | `SqlParam.Date(value)` | `date` | `DateOnly?` |
 | `SqlParam.Time(value, scale)` | `time(scale)` | `TimeOnly?` |
@@ -16,7 +16,7 @@ where appropriate.
 | `SqlParam.DateTime2(value, scale)` | `datetime2(scale)` | `DateTime?` |
 | `SqlParam.DateTimeOffset(value, scale)` | `datetimeoffset(scale)` | `DateTimeOffset?` |
 
-## date and time
+## date e time
 
 ```csharp
 await connection.ExecuteAsync(
@@ -31,8 +31,8 @@ await connection.ExecuteAsync(
     });
 ```
 
-`DateOnly` is materialized as `DateTime` at midnight. `TimeOnly` is materialized
-as `TimeSpan`.
+`DateOnly` é materializado como `DateTime` à meia-noite. `TimeOnly` é
+materializado como `TimeSpan`.
 
 ## datetime, smalldatetime, datetime2
 
@@ -42,7 +42,7 @@ RoundedAt = SqlParam.SmallDateTime(roundedAt)
 PublishedAt = SqlParam.DateTime2(publishedAt, scale: 7)
 ```
 
-`DateTime` values are passed without changing `DateTime.Kind`.
+Valores `DateTime` são passados sem alteração de `DateTime.Kind`.
 
 ## datetimeoffset
 
@@ -52,13 +52,13 @@ OccurredAt = SqlParam.DateTimeOffset(
     scale: 7)
 ```
 
-`DateTimeOffset` values are not normalized to UTC and offsets are not changed by
-the library.
+Valores `DateTimeOffset` não são normalizados para UTC e offsets não são
+alterados pela biblioteca.
 
-## Scale
+## Escala
 
-`time`, `datetime2`, and `datetimeoffset` accept `scale` values from 0 to 7 and
-default to 7.
+`time`, `datetime2` e `datetimeoffset` aceitam valores de `scale` de 0 a 7 e
+usam 7 por padrão.
 
-The library does not parse strings, round manually, normalize time zones, or
-validate the complete SQL Server temporal range.
+A biblioteca não faz parsing de strings, não arredonda manualmente, não
+normaliza time zones e não valida toda a faixa temporal do SQL Server.

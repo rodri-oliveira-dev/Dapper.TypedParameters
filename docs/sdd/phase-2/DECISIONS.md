@@ -45,3 +45,5 @@
 39. The package does not introspect database schema.
 40. Consumers are responsible for choosing the SQL Server type that matches
     their schema or stored procedure contract.
+41. Public docs linked from the Brazilian Portuguese README must have maintained
+    `.pt-BR.md` counterparts.
