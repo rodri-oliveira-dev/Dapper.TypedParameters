@@ -13,6 +13,10 @@
 - Adiciona leitura de outputs por `OutputValue` e `GetValue<T>()`.
 - Normaliza output `DBNull.Value` para `null` e rejeita casts incompativeis sem
   conversao silenciosa.
+- Adiciona suporte a table-valued parameters com `SqlParam.TableValued`.
+- Configura TVPs como `SqlDbType.Structured` com `TypeName` explicito e
+  `DataTable` fornecido pelo chamador.
+- Suporta `DataTable` vazio para TVPs e rejeita tabela nula.
 - Mantem API equivalente para `net8.0` e `net10.0`.
 
 ## 0.1.0-preview.1

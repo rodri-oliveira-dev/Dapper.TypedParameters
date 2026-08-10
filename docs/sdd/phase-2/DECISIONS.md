@@ -23,3 +23,9 @@
 19. Output values are read through `OutputValue` or `GetValue<T>()`; the mutable `SqlParameter` is retained internally but not exposed publicly.
 20. `DBNull.Value` output is normalized to `null`; non-nullable value type reads throw instead of returning `default`.
 21. Output parameter instances may be reused non-concurrently, but must not be shared concurrently across commands.
+22. Table-valued parameters use a dedicated parameter type rather than extending the scalar `TypedSqlParameter` model.
+23. Prompt 010 exposes only `SqlParam.TableValued(string typeName, DataTable value)`.
+24. TVPs are materialized with `SqlDbType.Structured`, `TypeName`, `Value`, and `ParameterDirection.Input`.
+25. Empty `DataTable` values are supported; null `DataTable` values are rejected.
+26. The library does not infer TVP schema, validate table columns against SQL Server, or map POCOs.
+27. No `IEnumerable<Microsoft.Data.SqlClient.Server.SqlDataRecord>` overload is added in prompt 010.

@@ -196,6 +196,17 @@ public static class SqlParam
         byte scale = MaxTemporalScale) =>
         new(value, SqlDbType.DateTimeOffset, scale: ValidateTemporalScale(scale));
 
+    /// <summary>
+    /// Creates a SQL Server table-valued parameter for an existing user-defined table type.
+    /// </summary>
+    /// <param name="typeName">The SQL Server user-defined table type name.</param>
+    /// <param name="value">The table value to send to SQL Server.</param>
+    /// <returns>A table-valued parameter that can be consumed by Dapper.</returns>
+    public static TableValuedSqlParameter TableValued(
+        string typeName,
+        DataTable value) =>
+        new TableValuedSqlParameter(typeName, value);
+
     private static TypedSqlParameter CreateString(
         string? value,
         SqlDbType sqlDbType,

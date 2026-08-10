@@ -78,6 +78,7 @@ SqlParam.DateTime(value)
 SqlParam.SmallDateTime(value)
 SqlParam.DateTime2(value, scale)
 SqlParam.DateTimeOffset(value, scale)
+SqlParam.TableValued(typeName, value)
 ```
 
 Todos os metodos retornam um parametro que o Dapper consome como `SqlMapper.ICustomQueryParameter`.
@@ -608,6 +609,72 @@ Leia outputs somente apos a conclusao da execucao do comando. Se a instancia
 ainda nao tiver sido materializada pelo Dapper, a leitura gera
 `InvalidOperationException`.
 
+## Table-valued parameters
+
+TVPs usam um user-defined table type existente no SQL Server. A biblioteca
+configura `SqlDbType.Structured`, `TypeName`, `Value` e
+`ParameterDirection.Input`; ela nao cria o tipo no banco e nao compara o schema
+do `DataTable` com o table type.
+
+Exemplo de table type:
+
+```sql
+CREATE TYPE dbo.CustomerBatch AS TABLE
+(
+    CustomerId int NOT NULL,
+    Name nvarchar(100) NOT NULL,
+    IsActive bit NOT NULL
+);
+```
+
+Montagem do `DataTable` e chamada pelo Dapper:
+
+```csharp
+using System.Data;
+using System.Threading.Tasks;
+using Dapper;
+using Dapper.TypedParameters.SqlServer;
+using Microsoft.Data.SqlClient;
+
+public static class TableValuedExample
+{
+    public static async Task<int> InsertCustomersAsync(string connectionString)
+    {
+        await using var connection = new SqlConnection(connectionString);
+
+        using var customers = new DataTable();
+        customers.Columns.Add("CustomerId", typeof(int));
+        customers.Columns.Add("Name", typeof(string));
+        customers.Columns.Add("IsActive", typeof(bool));
+        customers.Rows.Add(1, "Ada Lovelace", true);
+        customers.Rows.Add(2, "Grace Hopper", true);
+
+        return await connection.ExecuteAsync(
+            """
+            INSERT INTO dbo.Customers (CustomerId, Name, IsActive)
+            SELECT CustomerId, Name, IsActive
+            FROM @Customers;
+            """,
+            new
+            {
+                Customers = SqlParam.TableValued(
+                    "dbo.CustomerBatch",
+                    customers)
+            });
+    }
+}
+```
+
+Um `DataTable` sem linhas e aceito, desde que as colunas tenham sido declaradas
+para corresponder ao table type. `DataTable` nulo e rejeitado. TVPs sao
+input-only nesta API; nao ha suporte a `Output`, `InputOutput`, `Size`,
+`Precision` ou `Scale`.
+
+O schema e responsabilidade do chamador. A biblioteca nao consulta o banco, nao
+infere colunas, nao mapeia POCOs e nao valida automaticamente se as colunas do
+`DataTable` correspondem ao user-defined table type. Incompatibilidades sao
+validadas pelo `Microsoft.Data.SqlClient` ou pelo SQL Server durante a execucao.
+
 ## O que o pacote nao faz
 
 - Nao consulta schema.
@@ -615,8 +682,9 @@ ainda nao tiver sido materializada pelo Dapper, a leitura gera
 - Nao detecta automaticamente `CONVERT_IMPLICIT`.
 - Nao altera SQL.
 - Nao trata listas `IN`.
+- Nao infere schema de TVP.
+- Nao mapeia POCOs para TVP.
 - Nao oferece `image`, `rowversion`, `timestamp` ou `filestream` nesta versao.
-- Nao oferece TVPs nesta versao.
 - Nao oferece outros providers nesta versao.
 - Nao valida se o conteudo cabe em bytes no tamanho declarado.
 
@@ -638,7 +706,6 @@ Os testes de integracao usam SQL Server real em container por meio de `Testconta
 
 Itens planejados como trabalho futuro, sem API publica nesta versao:
 
-- TVPs.
 - Outros providers.
 
 ## Afiliacao

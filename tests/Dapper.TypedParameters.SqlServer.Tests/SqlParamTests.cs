@@ -676,6 +676,7 @@ public sealed class SqlParamTests
                 "SmallDateTime",
                 "SmallInt",
                 "SmallMoney",
+                "TableValued",
                 "Time",
                 "TinyInt",
                 "UniqueIdentifier",

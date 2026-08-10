@@ -13,7 +13,7 @@ Prompts must run in this order:
 3. `008-date-and-time-parameters`
 4. `009-output-parameters`
 5. `010-table-valued-parameters`
-6. `011-release-readiness`
+6. `011-package-quality`
 
 Each prompt must run in a separate chat without relying on memory from previous chats.
 
