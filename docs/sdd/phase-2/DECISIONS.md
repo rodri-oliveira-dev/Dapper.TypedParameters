@@ -36,3 +36,12 @@
 32. Benchmarks are isolated in a BenchmarkDotNet project and a manual workflow; full benchmark measurements are not part of pull request CI.
 33. Dependency diagnostics use Central Package Management, NuGet audit, explicit vulnerability listing during validation, and GitHub dependency review on pull requests.
 34. Restore locked mode is deferred until the repository makes a clear lock-file maintenance decision.
+35. English is the canonical public documentation language.
+36. `README.pt-BR.md` is a supported maintained translation of the main README.
+37. Deeper technical documentation lives under `docs/`, with family-specific
+    examples under `docs/examples/`.
+38. Public documentation must not promise performance gains from explicit
+    parameter metadata.
+39. The package does not introspect database schema.
+40. Consumers are responsible for choosing the SQL Server type that matches
+    their schema or stored procedure contract.

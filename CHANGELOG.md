@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reescreve o README principal em ingles como documentacao canonica.
+- Adiciona `README.pt-BR.md` como traducao mantida em portugues brasileiro.
+- Adiciona documentacao conceitual e exemplos por familia de parametros em
+  `docs/`.
 - Adiciona parametros SQL Server numericos e booleanos explicitos para Dapper.
 - Inclui `bit`, `tinyint`, `smallint`, `int`, `bigint`, `real`, `float`, `decimal`, `money` e `smallmoney`.
 - Configura `Precision` e `Scale` declarados para `decimal`.

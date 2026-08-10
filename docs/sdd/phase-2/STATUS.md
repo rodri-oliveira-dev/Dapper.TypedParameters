@@ -1,19 +1,22 @@
-Last completed prompt: 011
+Last completed prompt: 012
 Current status: Completed
 Branch: build/package-quality
-Last expected commit: build: improve package quality and diagnostics
-Next prompt: None — phase 2 ready for human review
+Last expected commit: docs: explain typed parameter use cases
+Next prompt: 013-package-release-policy
+Documentation canonical language: English
+Portuguese README: README.pt-BR.md
 Push performed: No
 Pull request opened: No
 Package published: No
 
 ## Handoff notes
 
-- Remote update over SSH failed with `Permission denied (publickey)`.
-- Local `main` was fast-forwarded from `feat/table-valued-parameters` before
-  creating `build/package-quality` because remote update over SSH was not
-  available in this environment.
-- Prompt 011 adds package quality diagnostics without functional API changes.
-- SourceLink, `.snupkg`, PublicApiAnalyzers, SDK package validation, coverage
-  artifacts, package content inspection, dependency review, and manual
-  BenchmarkDotNet coverage are configured.
+- The user explicitly asked to use the current branch instead of creating
+  `docs/conceptual-documentation`.
+- Remote update over SSH failed with `Permission denied (publickey)`, so remote
+  `main` could not be confirmed from this environment.
+- `prompts.md` existed as an unrelated untracked file before prompt 012 work and
+  was not changed or staged.
+- Public documentation now uses English as the canonical language and
+  `README.pt-BR.md` as the supported Brazilian Portuguese translation.
+- The next prompt is `013-package-release-policy`.
