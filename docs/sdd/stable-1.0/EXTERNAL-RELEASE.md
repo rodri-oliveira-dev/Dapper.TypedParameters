@@ -25,6 +25,19 @@ PENDING
 RcPublicConsumption:
 PENDING
 
+RcPublicConsumptionVerification:
+FAILED
+
+RcPublicConsumptionVerificationDate:
+2026-08-11
+
+RcPublicConsumptionVerificationSource:
+https://api.nuget.org/v3-flatcontainer/typedparameters.dapper.sqlserver/index.json
+
+RcPublicConsumptionVerificationResult:
+Only 0.1.0-preview.1 was available from NuGet.org. Version 1.0.0-rc.1 was not
+found, so stable 1.0.0 preparation is blocked.
+
 StableVersion:
 1.0.0
 

@@ -1,11 +1,11 @@
 Last completed prompt: 019
 
-Current prompt: None
+Current prompt: 020
 
-Current status: Completed
+Current status: Blocked
 
 Branch:
-release/1.0-hardening
+release/1.0.0
 
 Public API freeze:
 APPROVED
@@ -20,13 +20,13 @@ RC version:
 1.0.0-rc.1
 
 Last expected commit:
-chore: prepare 1.0.0-rc.1
+chore: prepare 1.0.0 release
 
 Next action:
-Human review, merge, tag, rehearsal and RC publication
+Publish and publicly validate 1.0.0-rc.1 before retrying stable preparation
 
 Next prompt:
-020-stable-preparation
+020-stable-preparation retry
 
 Preview public consumption:
 Passed
@@ -40,3 +40,19 @@ net10.0
 
 Package published by this prompt:
 No
+
+Stable readiness:
+BLOCKED
+
+Stable version:
+1.0.0
+
+RC public consumption:
+Failed
+
+Public API compatibility:
+Not evaluated
+
+Blocker:
+TypedParameters.Dapper.SqlServer 1.0.0-rc.1 was not found on NuGet.org during
+public package consumption validation.
