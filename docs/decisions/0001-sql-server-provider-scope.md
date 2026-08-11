@@ -10,13 +10,22 @@ The repository may host typed-parameter packages for additional database provide
 
 ## Decision
 
-- The first package is named `Dapper.TypedParameters.SqlServer`.
+- The first package originally used the working identity
+  `Dapper.TypedParameters.SqlServer`.
+- The final public NuGet Package ID is defined by
+  [0005 - Package identity and release policy](0005-package-identity-and-release-policy.md):
+  `TypedParameters.Dapper.SqlServer`.
+- The assembly and namespace remain `Dapper.TypedParameters.SqlServer`.
 - It supports `Microsoft.Data.SqlClient` only.
 - `System.Data.SqlClient` is not supported.
 - The public factory is named `SqlParam`.
 - String extension methods such as `value.AsVarChar(11)` are not part of the initial API.
 - SQL Server `max` types use explicit methods such as `VarCharMax` and `NVarCharMax`; callers do not pass `-1` directly.
 - No provider-neutral `Core` or `Abstractions` package will be created until a second provider reveals genuinely shared concepts.
+- When a typed parameter reuses an existing `Microsoft.Data.SqlClient.SqlParameter`,
+  the library overwrites the provider metadata declared by the current typed
+  parameter and resets scalar metadata that is not declared by the current typed
+  parameter to the provider default value `0`.
 
 ## Consequences
 

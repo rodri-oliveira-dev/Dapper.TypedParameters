@@ -13,6 +13,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+
   validate:
     name: Validate ${{ matrix.framework }}
     runs-on: ubuntu-latest
@@ -43,7 +56,21 @@ jobs:
         run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore
 
       - name: Test unit
-        run: dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/unit/${{ matrix.framework }}
+
+      - name: Upload unit coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit-${{ matrix.framework }}
+          path: artifacts/coverage/unit/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
 
       - name: Docker diagnostics
         run: |
@@ -53,7 +80,178 @@ jobs:
       - name: Test integration
         env:
           ACCEPT_EULA: "Y"
-        run: dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj --framework ${{ matrix.framework }} --configuration Release --no-build --verbosity normal
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/integration/${{ matrix.framework }}
+
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration-${{ matrix.framework }}
+          path: artifacts/coverage/integration/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
+
+  sonar:
+    name: SonarQube Cloud
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate
+    if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Verify SONAR_TOKEN
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -z "${SONAR_TOKEN}" ]; then
+            echo "SONAR_TOKEN repository secret is required."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Restore
+        run: dotnet restore Dapper.TypedParameters.sln
+
+      - name: Begin Sonar analysis
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet sonarscanner begin
+          /k:"rodri-oliveira-dev_Dapper.TypedParameters"
+          /o:"rodri-oliveira-dev"
+          /d:sonar.token="${SONAR_TOKEN}"
+          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/sonar/opencover/unit.opencover.xml,artifacts/coverage/sonar/opencover/integration.opencover.xml"
+          /d:sonar.qualitygate.wait=true
+          /d:sonar.qualitygate.timeout=300
+
+      - name: Build canonical TFM
+        run: >
+          dotnet build Dapper.TypedParameters.sln
+          --framework net8.0
+          --configuration Release
+          --no-restore
+          --no-incremental
+          --disable-build-servers
+
+      - name: Test unit with OpenCover
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
+          --framework net8.0
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --settings tests/sonar.runsettings
+          --results-directory artifacts/coverage/sonar/unit
+
+      - name: Docker diagnostics
+        run: |
+          docker version
+          docker info
+
+      - name: Test integration with OpenCover
+        env:
+          ACCEPT_EULA: "Y"
+        run: >
+          dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj
+          --framework net8.0
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --settings tests/sonar.runsettings
+          --results-directory artifacts/coverage/sonar/integration
+
+      - name: Verify OpenCover coverage
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $output = "artifacts/coverage/sonar/opencover"
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+
+          $reports = @(
+            @{
+              Name = "unit"
+              Path = "artifacts/coverage/sonar/unit"
+            },
+            @{
+              Name = "integration"
+              Path = "artifacts/coverage/sonar/integration"
+            }
+          )
+
+          foreach ($report in $reports) {
+            $files = @(Get-ChildItem -LiteralPath $report.Path -Recurse -File -Filter "coverage.opencover.xml")
+            if ($files.Count -ne 1) {
+              $found = if ($files.Count -eq 0) { "<none>" } else { $files.FullName -join ", " }
+              throw "Expected exactly one OpenCover report for $($report.Name), found $($files.Count): $found"
+            }
+
+            Copy-Item -LiteralPath $files[0].FullName -Destination (Join-Path $output "$($report.Name).opencover.xml")
+          }
+
+          $normalized = @(Get-ChildItem -LiteralPath $output -File -Filter "*.opencover.xml")
+          if ($normalized.Count -ne 2) {
+            throw "Expected two normalized OpenCover reports, found $($normalized.Count)."
+          }
+
+          $productionAssemblyFound = $false
+          $productionSourceFound = $false
+
+          foreach ($file in $normalized) {
+            [xml] $coverage = Get-Content -Raw -LiteralPath $file.FullName
+            $moduleNames = @($coverage.CoverageSession.Modules.Module | ForEach-Object { $_.ModuleName })
+            $sourceFiles = @($coverage.CoverageSession.Modules.Module.Files.File | ForEach-Object { $_.fullPath })
+
+            $productionAssemblyFound = $productionAssemblyFound -or
+              ($moduleNames -contains "Dapper.TypedParameters.SqlServer")
+            $productionSourceFound = $productionSourceFound -or
+              (@($sourceFiles | Where-Object {
+                $_ -like "*src/Dapper.TypedParameters.SqlServer*" -or
+                $_ -like "*src\Dapper.TypedParameters.SqlServer*"
+              }).Count -gt 0)
+          }
+
+          if (-not $productionAssemblyFound) {
+            throw "OpenCover report does not contain production assembly Dapper.TypedParameters.SqlServer."
+          }
+
+          if (-not $productionSourceFound) {
+            throw "OpenCover report does not contain production source files."
+          }
+
+      - name: End Sonar analysis
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
   pack:
     name: Pack NuGet artifact
@@ -78,9 +276,24 @@ jobs:
       - name: Pack
         run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-restore --output artifacts/packages
 
+      - name: Validate package contents
+        shell: pwsh
+        run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
+
+      - name: Validate package consumption
+        shell: pwsh
+        run: ./scripts/Test-PackageConsumption.ps1 -PackageDirectory artifacts/packages
+
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: nuget-package
           path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+      - name: Upload symbol package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-symbol-package
+          path: artifacts/packages/*.snupkg
           if-no-files-found: error

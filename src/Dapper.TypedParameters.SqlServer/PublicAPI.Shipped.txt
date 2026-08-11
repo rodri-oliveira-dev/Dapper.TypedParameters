@@ -1,0 +1,47 @@
+#nullable enable
+Dapper.TypedParameters.SqlServer.SqlParam
+Dapper.TypedParameters.SqlServer.TableValuedSqlParameter
+Dapper.TypedParameters.SqlServer.TableValuedSqlParameter.AddParameter(System.Data.IDbCommand! command, string! name) -> void
+Dapper.TypedParameters.SqlServer.TableValuedSqlParameter.Direction.get -> System.Data.ParameterDirection
+Dapper.TypedParameters.SqlServer.TableValuedSqlParameter.SqlDbType.get -> System.Data.SqlDbType
+Dapper.TypedParameters.SqlServer.TableValuedSqlParameter.TypeName.get -> string!
+Dapper.TypedParameters.SqlServer.TableValuedSqlParameter.Value.get -> System.Data.DataTable!
+Dapper.TypedParameters.SqlServer.TypedSqlParameter
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.AddParameter(System.Data.IDbCommand! command, string! name) -> void
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.AsInputOutput() -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.AsOutput() -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.Direction.get -> System.Data.ParameterDirection
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.GetValue<T>() -> T?
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.OutputValue.get -> object?
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.Precision.get -> byte?
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.Scale.get -> byte?
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.Size.get -> int?
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.SqlDbType.get -> System.Data.SqlDbType
+Dapper.TypedParameters.SqlServer.TypedSqlParameter.Value.get -> object?
+static Dapper.TypedParameters.SqlServer.SqlParam.BigInt(long? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Binary(byte[]? value, int size) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Bit(bool? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Char(string? value, int size) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Date(System.DateOnly? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.DateTime(System.DateTime? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.DateTime2(System.DateTime? value, byte scale = 7) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.DateTimeOffset(System.DateTimeOffset? value, byte scale = 7) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Decimal(decimal? value, byte precision, byte scale) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Float(double? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Int(int? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Money(decimal? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.NChar(string? value, int size) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.NVarChar(string? value, int size) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.NVarCharMax(string? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Real(float? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.SmallDateTime(System.DateTime? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.SmallInt(short? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.SmallMoney(decimal? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.TableValued(string! typeName, System.Data.DataTable! value) -> Dapper.TypedParameters.SqlServer.TableValuedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.Time(System.TimeOnly? value, byte scale = 7) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.TinyInt(byte? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.UniqueIdentifier(System.Guid? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.VarBinary(byte[]? value, int size) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.VarBinaryMax(byte[]? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.VarChar(string? value, int size) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!
+static Dapper.TypedParameters.SqlServer.SqlParam.VarCharMax(string? value) -> Dapper.TypedParameters.SqlServer.TypedSqlParameter!

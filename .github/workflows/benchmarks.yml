@@ -1,0 +1,51 @@
+name: Benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_benchmarks:
+        description: Run benchmark measurements after building
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      framework:
+        description: Target framework for benchmark execution
+        required: true
+        default: net8.0
+        type: choice
+        options:
+          - net8.0
+          - net10.0
+
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.302
+
+      - name: Restore
+        run: dotnet restore benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks.csproj
+
+      - name: Build
+        run: dotnet build benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks.csproj --configuration Release --no-restore
+
+      - name: Run benchmarks
+        if: ${{ inputs.run_benchmarks == 'true' }}
+        run: dotnet run --project benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks/Dapper.TypedParameters.SqlServer.Benchmarks.csproj --configuration Release --framework ${{ inputs.framework }} -- --filter '*'
