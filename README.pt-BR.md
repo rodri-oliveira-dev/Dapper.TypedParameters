@@ -12,16 +12,10 @@ tamanho, precisão, escala, direção e nome de tipo para table-valued parameter
 Stable atual:
 
 ```text
-Nenhum ainda
+Preparado: 1.0.0
 ```
 
 Release candidate atual:
-
-```text
-Nenhum publicado ainda
-```
-
-Proximo release candidate:
 
 ```text
 1.0.0-rc.1
@@ -134,23 +128,29 @@ específico.
 
 ## Instalação
 
-Instale o preview publico atual pelo NuGet.org:
+Depois que o pacote stable for publicado, instale pelo NuGet.org:
 
 ```bash
-dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0
 ```
 
-Depois que o workflow de release publicar o proximo RC, instale com:
+O release candidate publico atual esta disponivel no NuGet.org:
 
 ```bash
 dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0-rc.1
+```
+
+O preview publico anterior continua disponivel no NuGet.org:
+
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1
 ```
 
 Para testar uma build local ainda não publicada a partir deste repositório:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
-dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0-rc.1 --source ./artifacts/packages
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0 --source ./artifacts/packages
 ```
 
 Package ID NuGet:
@@ -168,8 +168,9 @@ Assembly: Dapper.TypedParameters.SqlServer.dll
 Namespace: Dapper.TypedParameters.SqlServer
 ```
 
-Se o NuGet.org ainda não contiver a versão solicitada, use as instruções de
-build local acima ou aguarde o workflow de release publicar essa versão.
+Esta branch prepara `1.0.0`; ela nao publica o pacote stable. Se o NuGet.org
+ainda nao contiver `1.0.0`, use o pacote RC acima, use as instrucoes de build
+local ou aguarde o workflow de release stable publicar essa versao.
 
 ## Quick start
 

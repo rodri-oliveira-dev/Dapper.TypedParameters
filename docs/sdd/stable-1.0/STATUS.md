@@ -1,11 +1,11 @@
-Last completed prompt: 019
+Last completed prompt: 020
 
 Current prompt: None
 
 Current status: Completed
 
 Branch:
-release/1.0-hardening
+release/1.0.0
 
 Public API freeze:
 APPROVED
@@ -19,14 +19,20 @@ READY FOR 1.0.0-RC.1
 RC version:
 1.0.0-rc.1
 
-Last expected commit:
-chore: prepare 1.0.0-rc.1
+Stable readiness:
+READY FOR 1.0.0
 
-Next action:
-Human review, merge, tag, rehearsal and RC publication
+Version:
+1.0.0
 
-Next prompt:
-020-stable-preparation
+PackageId:
+TypedParameters.Dapper.SqlServer
+
+RC public consumption:
+Passed
+
+Public API compatibility:
+Passed
 
 Preview public consumption:
 Passed
@@ -38,5 +44,15 @@ TFMs:
 net8.0
 net10.0
 
+Last expected commit:
+chore: prepare 1.0.0 release
+
 Package published by this prompt:
 No
+
+Next action:
+Human review, merge into main, tag v1.0.0, release rehearsal, stable
+publication, NuGet.org indexing, and public stable consumption smoke test
+
+Next prompt:
+None
