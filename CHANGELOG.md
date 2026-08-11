@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Adds SonarQube Cloud analysis to CI.
+- Imports OpenCover coverage reports for SonarQube Cloud.
+- Enforces the pull request Quality Gate through the SonarQube Cloud job.
+
 ## 1.0.0
 
 - Prepares the first stable release of `TypedParameters.Dapper.SqlServer`.
