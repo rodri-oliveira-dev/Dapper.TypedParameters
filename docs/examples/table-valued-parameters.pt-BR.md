@@ -7,7 +7,7 @@
 Table-valued parameters usam um user-defined table type SQL Server existente e
 um `DataTable` fornecido pelo chamador.
 
-## Criar o table type
+## Criar o Table Type
 
 ```sql
 CREATE TYPE dbo.CustomerBatch AS TABLE
@@ -18,7 +18,7 @@ CREATE TYPE dbo.CustomerBatch AS TABLE
 );
 ```
 
-A biblioteca não cria esse tipo.
+A biblioteca não cria esse user-defined table type automaticamente.
 
 ## Montar o DataTable
 
@@ -55,10 +55,11 @@ int rows = await connection.ExecuteAsync(
     });
 ```
 
-`SqlParam.TableValued(typeName, value)` materializa `SqlDbType.Structured`,
-`TypeName`, o `DataTable` fornecido e `ParameterDirection.Input`.
+`SqlParam.TableValued(typeName, value)` materializa um parâmetro estruturado com
+`SqlDbType.Structured`, o `TypeName` fornecido, o `DataTable` fornecido e
+`ParameterDirection.Input`.
 
-## Tabelas vazias
+## Tabelas Vazias
 
 Um `DataTable` vazio é suportado quando suas colunas estão declaradas:
 
@@ -74,13 +75,13 @@ var parameter = SqlParam.TableValued("dbo.CustomerBatch", customers);
 Use uma tabela vazia quando a intenção for enviar um conjunto vazio. Um
 `DataTable` nulo é rejeitado.
 
-## Responsabilidade pelo schema
+## Responsabilidade Pelo Schema
 
 O chamador é responsável por:
 
 - criar o user-defined table type;
 - escolher o `TypeName` correto;
-- montar um `DataTable` cujas colunas correspondam ao table type;
+- montar um `DataTable` cujas colunas correspondam ao user-defined table type;
 - tratar erros do provider ou do SQL Server para divergências de schema.
 
 A biblioteca não descobre o schema do table type, não mapeia POCOs, não consulta

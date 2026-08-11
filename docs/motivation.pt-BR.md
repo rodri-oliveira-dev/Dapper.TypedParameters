@@ -5,82 +5,88 @@
 [Voltar ao README](../README.pt-BR.md) | [Primeiros passos](getting-started.pt-BR.md)
 
 `Dapper.TypedParameters.SqlServer` existe porque o tipo de um parâmetro SQL
-Server faz parte do contrato entre o código da aplicação e o banco. Dapper mantém
-o modelo de chamada pequeno, enquanto providers ADO.NET ainda precisam
-transformar valores CLR em parâmetros do provider.
+Server faz parte do contrato entre o código da aplicação e o banco. Dapper
+mantém o envio de parâmetros pequeno e conveniente, enquanto providers ADO.NET
+ainda precisam materializar valores CLR como parâmetros SQL Server.
 
-## Inferência de parâmetros
+## Valores CLR e Metadados SQL
 
-Quando uma chamada Dapper recebe um objeto anônimo, Dapper e o provider montam
-os parâmetros que serão enviados com o comando. Um valor como uma `string`,
-`decimal`, `DateTime`, `Guid` ou `byte[]` .NET precisa de metadados SQL Server
-antes que o SQL Server execute a query.
+Um valor CLR como `string`, `decimal`, `DateOnly`, `TimeOnly`, `DateTime`,
+`DateTimeOffset`, `Guid` ou `byte[]` não representa sozinho o contrato completo
+do parâmetro SQL Server. O provider também envia metadados como `SqlDbType`,
+tamanho, precisão, escala, direção e, para table-valued parameters, `TypeName`.
 
-Inferência é conveniente e muitas vezes é exatamente o que uma aplicação precisa.
-O custo é que os metadados SQL inferidos não ficam explícitos no código chamador.
+`SqlParameter` é o objeto do provider que leva esses metadados ao
+`Microsoft.Data.SqlClient`.
 
-## Metadados de tipo SQL
+## Inferência de Parâmetros
 
-A biblioteca expõe os metadados aplicáveis à API atual:
-
-- `SqlDbType`: o tipo SQL Server, como `VarChar`, `Decimal` ou `Structured`.
-- `Size`: tamanho de strings e binários limitados, com `-1` representando tipos
-  SQL Server `max`.
-- `Precision`: declarado apenas para `decimal`.
-- `Scale`: declarado para `decimal`, `time`, `datetime2` e `datetimeoffset`.
-- `Direction`: `Input`, `Output` ou `InputOutput` para parâmetros escalares.
-- `TypeName`: nome do user-defined table type para table-valued parameters.
-
-## Divergência de tipo
-
-Uma divergência de tipo acontece quando o parâmetro enviado pelo cliente não é o
-mesmo tipo SQL Server esperado pelo schema ou pelo contrato da stored procedure.
-Por exemplo, o código pode enviar um parâmetro string enquanto a coluna comparada
-é `varchar(11)`, ou pode omitir a precisão e a escala pretendidas para
-`decimal(18, 2)`.
-
-Esta biblioteca torna o tipo do banco parte da intenção do código chamador:
+Dapper e o provider conseguem inferir metadados de parâmetros a partir de valores
+comuns em objetos anônimos:
 
 ```csharp
-Amount = SqlParam.Decimal(amount, precision: 18, scale: 2)
+new
+{
+    Document = "12345678901"
+}
 ```
 
-## Conversão implícita
+Essa inferência é útil e correta em muitas aplicações. O trade-off é que o tipo
+SQL enviado ao SQL Server não fica explícito no código chamador.
 
-SQL Server pode aplicar conversões implícitas ao comparar ou atribuir valores de
-tipos SQL diferentes. Se isso importa depende dos tipos exatos, da precedência de
-tipos, da collation, dos predicados, dos índices e do plano de execução.
+## Metadados SQL Server Explícitos
 
-A presença de uma divergência não significa que uma query é automaticamente
-lenta, e um parâmetro tipado não garante um plano melhor. Metadados explícitos
-apenas dão ao chamador um modo de enviar o tipo SQL pretendido.
+Quando o contrato esperado do banco é conhecido, o chamador pode deixá-lo
+explícito:
 
-## Planos de execução
-
-Diferenças de tipo de parâmetro podem influenciar como o SQL Server avalia
-expressões. Em alguns workloads, evitar uma divergência não intencional pode
-ajudar a preservar o formato de plano para o qual o schema foi desenhado. Em
-outros workloads, pode não haver diferença mensurável.
-
-Código sensível a performance deve ser verificado com dados, estatísticas,
-índices e planos de execução representativos.
-
-## Intenção explícita
-
-O principal benefício é intenção:
-
-```text
-the database type becomes part of the calling code's intent
+```csharp
+new
+{
+    Document = SqlParam.VarChar(document, 11),
+    Amount = SqlParam.Decimal(amount, precision: 18, scale: 2)
+}
 ```
 
-O chamador escolhe `SqlParam.VarChar`, `SqlParam.NVarChar`,
-`SqlParam.Decimal`, `SqlParam.DateTime2` ou outra factory porque o contrato do
-banco é conhecido naquele ponto de chamada.
+A biblioteca então materializa parâmetros do provider com `SqlDbType`, `Size`,
+`Precision` e `Scale` declarados.
+
+## varchar e nvarchar
+
+Um exemplo comum é uma `string` .NET comparada com uma coluna SQL Server
+declarada como `varchar(11)` ou `nvarchar(150)`.
+
+```csharp
+Document = SqlParam.VarChar(document, 11)
+Name = SqlParam.NVarChar(name, 150)
+```
+
+A biblioteca não presume que `varchar` é melhor que `nvarchar`. A escolha correta
+é a que corresponde ao schema ou ao contrato da stored procedure.
+
+## Conversões Implícitas
+
+SQL Server pode aplicar conversões implícitas quando expressões combinam tipos
+SQL diferentes. Se uma conversão aparece, e se ela importa, depende da
+precedência de tipos do SQL Server, da collation, dos predicados, dos índices, do
+formato da query e do plano de execução final.
+
+Metadados explícitos de parâmetros podem ajudar a evitar divergências não
+intencionais quando o chamador conhece o tipo SQL Server esperado. Eles não
+garantem queries mais rápidas e não removem toda conversão possível.
+
+## Índices e Planos de Execução
+
+Metadados de parâmetros podem influenciar como o SQL Server avalia predicados e
+se um padrão de acesso por índice continua útil para uma query específica. O
+resultado depende do plano.
+
+Código sensível a performance deve ser medido com dados, estatísticas, índices e
+planos de execução representativos.
 
 ## Trade-offs
 
 - Mais conhecimento do schema aparece no código da aplicação.
 - O chamador pode declarar o tipo SQL errado.
 - Mudanças de schema podem exigir mudanças no código.
-- As chamadas ficam mais verbosas que valores comuns em objetos anônimos.
-- A biblioteca não introspecta schema automaticamente.
+- As chamadas ficam mais explícitas que valores comuns em objetos anônimos.
+- A biblioteca não inspeciona schema automaticamente.

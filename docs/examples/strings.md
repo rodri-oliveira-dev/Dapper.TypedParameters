@@ -1,6 +1,6 @@
 # String Parameters
 
-[English](strings.md) | [Português (Brasil)](strings.pt-BR.md)
+English | [Português (Brasil)](strings.pt-BR.md)
 
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
@@ -15,7 +15,7 @@ String factories declare SQL Server string metadata explicitly.
 | `SqlParam.VarCharMax(value)` | `varchar(max)` | `Size = -1` |
 | `SqlParam.NVarCharMax(value)` | `nvarchar(max)` | `Size = -1` |
 
-## varchar and nvarchar
+## Unicode and Non-Unicode
 
 ```csharp
 var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
@@ -32,20 +32,23 @@ var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
     });
 ```
 
-The library does not assume that `varchar` is better than `nvarchar`. Choose the
-factory that matches the schema or stored procedure contract.
+Choose `varchar` or `nvarchar` according to the schema or stored procedure
+contract. The library does not treat one as inherently better or faster.
 
-## Fixed-length strings
+## Fixed and Variable Length
 
 ```csharp
 StateCode = SqlParam.Char("SP", 2)
-LanguageCode = SqlParam.NChar("A", 1)
+LanguageCode = SqlParam.NChar("PT", 2)
+Nickname = SqlParam.VarChar("ada", 40)
+DisplayName = SqlParam.NVarChar("Ada Lovelace", 100)
 ```
 
-The library declares the fixed SQL type and size. SQL Server and
-`Microsoft.Data.SqlClient` own fixed-length storage behavior.
+The library declares the fixed or variable SQL type and the requested size.
+SQL Server and `Microsoft.Data.SqlClient` own storage, padding, and conversion
+behavior during execution.
 
-## max types
+## MAX Types
 
 ```csharp
 AnsiPayload = SqlParam.VarCharMax(payload)
@@ -54,17 +57,17 @@ UnicodePayload = SqlParam.NVarCharMax(payload)
 
 Use the explicit `max` factories instead of passing `-1` to bounded factories.
 
-## Null values
+## Null Values
 
 ```csharp
 Nickname = SqlParam.NVarChar(null, 80)
 ```
 
-`null` is materialized as `DBNull.Value`.
+`null` is converted to `DBNull.Value` when the parameter is materialized.
 
-## Size notes
+## Size Notes
 
 For `varchar` and `char`, SQL Server sizes are declared in bytes. The
 relationship between bytes and characters depends on the data and SQL Server
-configuration. The library validates the declared size range but does not
+configuration. The library validates the declared size range, but it does not
 validate whether a particular value fits in bytes.

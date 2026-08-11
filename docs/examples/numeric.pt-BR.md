@@ -36,28 +36,20 @@ await connection.ExecuteAsync(
     });
 ```
 
-## Precisão e escala de decimal
+## Precisão e Escala de Decimal
 
 ```csharp
-await connection.ExecuteAsync(
-    """
-    INSERT INTO dbo.Invoices (CustomerId, Amount)
-    VALUES (@CustomerId, @Amount);
-    """,
-    new
-    {
-        CustomerId = SqlParam.BigInt(123456789L),
-        Amount = SqlParam.Decimal(123.45M, precision: 18, scale: 2)
-    });
+Amount = SqlParam.Decimal(123.45M, precision: 18, scale: 2)
 ```
 
-`precision` deve estar entre 1 e 38. `scale` deve estar entre 0 e `precision`.
+`precision` e `scale` são metadados explícitos do parâmetro. `precision` deve
+estar entre 1 e 38. `scale` deve estar entre 0 e `precision`.
 
-A biblioteca não arredonda valores decimal manualmente. Conversões válidas,
+A biblioteca não arredonda valores `decimal` manualmente. Conversões válidas,
 arredondamento e comportamento de faixa durante a execução continuam sob
 responsabilidade de `Microsoft.Data.SqlClient` e do SQL Server.
 
-## Ponto flutuante e dinheiro
+## Ponto Flutuante e Tipos Money
 
 ```csharp
 Temperature = SqlParam.Real(23.5F)
@@ -66,13 +58,14 @@ Price = SqlParam.Money(12.34M)
 Fee = SqlParam.SmallMoney(1.23M)
 ```
 
-Use essas factories somente quando o contrato do banco usar o tipo SQL Server
-correspondente.
+Use `money` e `smallmoney` somente quando o contrato do banco usar esses tipos
+SQL Server. Em muitos domínios de aplicação, um contrato explícito
+`decimal(precision, scale)` é mais fácil de raciocinar.
 
-## Valores null
+## Valores Nulos
 
 ```csharp
 Discount = SqlParam.Decimal(null, precision: 9, scale: 4)
 ```
 
-`null` é materializado como `DBNull.Value`.
+`null` é convertido para `DBNull.Value` quando o parâmetro é materializado.
