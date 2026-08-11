@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Stabilizes the public API contract for the 1.0 candidate without adding new
+  public APIs.
+- Resets scalar `SqlParameter` metadata that is not declared by the current
+  `TypedSqlParameter` when reusing an existing provider parameter.
+
+## 0.1.0-preview.1
+
+- Primeiro preview publico de `TypedParameters.Dapper.SqlServer`.
 - Reescreve o README principal em ingles como documentacao canonica.
 - Adiciona `README.pt-BR.md` como traducao mantida em portugues brasileiro.
 - Adiciona documentacao conceitual e exemplos por familia de parametros em
@@ -34,12 +42,3 @@
 - Ajusta `Microsoft.Data.SqlClient` para `6.1.6`.
 - Documenta politica de compatibilidade do driver para SQL Server 2016 a 2025,
   Azure SQL Database, Azure SQL Managed Instance e Azure Synapse Analytics.
-
-## 0.1.0-preview.1
-
-- Primeiro escopo preview do pacote planejado `TypedParameters.Dapper.SqlServer`.
-- Documenta parametros string SQL Server explicitamente tipados para Dapper.
-- Inclui `varchar`, `nvarchar`, `char`, `nchar`, `varchar(max)` e `nvarchar(max)`.
-- Suporta assets para `net8.0` e `net10.0` com a mesma API publica.
-- Usa `Dapper` `2.1.79` e `Microsoft.Data.SqlClient` `6.1.6`.
-- Mantem suporte restrito a `Microsoft.Data.SqlClient`; `System.Data.SqlClient` nao e suportado.

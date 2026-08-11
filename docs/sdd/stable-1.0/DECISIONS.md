@@ -16,9 +16,29 @@
    - `net8.0`
    - `net10.0`
 8. Feature freeze: Active.
+9. Public API contract: Frozen for 1.0 candidate.
+10. Breaking public API changes after this point: Not allowed without restarting
+    the RC cycle.
+11. Additive future APIs: May be considered for 1.x using SemVer compatibility
+    rules.
+12. Scalar provider-parameter reuse: declared scalar metadata is applied and
+    undeclared scalar metadata is reset to provider default `0`.
 
 ## Pending
 
-- Public API freeze review for Prompt 018.
 - RC release rehearsal for Prompt 019.
 - Stable release readiness for Prompt 020.
+
+## Public API Freeze
+
+Public API contract:
+Frozen for 1.0 candidate
+
+Feature freeze:
+Active
+
+Breaking public API changes after this point:
+Not allowed without restarting the RC cycle
+
+Additive future APIs:
+May be considered for 1.x using SemVer compatibility rules
