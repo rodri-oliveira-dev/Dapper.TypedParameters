@@ -7,6 +7,32 @@ parameters for Dapper using `Microsoft.Data.SqlClient`. It helps callers declare
 the SQL Server parameter metadata sent to the provider, such as type, size,
 precision, scale, direction, and table-valued parameter type name.
 
+## Release status
+
+Current stable:
+
+```text
+None yet
+```
+
+Current release candidate:
+
+```text
+None published yet
+```
+
+Upcoming release candidate:
+
+```text
+1.0.0-rc.1
+```
+
+Current public preview:
+
+```text
+0.1.0-preview.1
+```
+
 ## Why?
 
 Dapper makes parameter passing convenient:
@@ -107,17 +133,23 @@ explicit correspondence with the schema, not preference for a specific SQL type.
 
 ## Installation
 
-Install from NuGet.org after the package is published:
+Install the current public preview from NuGet.org:
 
 ```bash
 dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1
+```
+
+After the release workflow publishes the upcoming RC, install it with:
+
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0-rc.1
 ```
 
 To test an unreleased local build from this repository:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
-dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0-rc.1 --source ./artifacts/packages
 ```
 
 NuGet package ID:

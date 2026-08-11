@@ -8,6 +8,11 @@ namespace Dapper.TypedParameters.SqlServer;
 /// <summary>
 /// Represents an explicitly declared SQL Server parameter that can be consumed by Dapper.
 /// </summary>
+/// <remarks>
+/// Instances are immutable with respect to declared metadata. Output reads retain the
+/// latest materialized <see cref="SqlParameter"/> and are intended for non-concurrent
+/// command execution.
+/// </remarks>
 public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
 {
     internal TypedSqlParameter(
@@ -62,6 +67,11 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
     /// <summary>
     /// Gets the value assigned by SQL Server after command execution.
     /// </summary>
+    /// <remarks>
+    /// Read this property only after Dapper has materialized the parameter and command
+    /// execution has completed. A database <see cref="DBNull.Value"/> is returned as
+    /// <see langword="null"/>.
+    /// </remarks>
     public object? OutputValue
     {
         get
@@ -75,18 +85,24 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
     /// <summary>
     /// Creates an equivalent parameter configured as an output parameter.
     /// </summary>
+    /// <returns>A new parameter with the same metadata and <see cref="ParameterDirection.Output"/>.</returns>
     public TypedSqlParameter AsOutput() =>
         WithDirection(ParameterDirection.Output);
 
     /// <summary>
     /// Creates an equivalent parameter configured as an input/output parameter.
     /// </summary>
+    /// <returns>A new parameter with the same metadata and <see cref="ParameterDirection.InputOutput"/>.</returns>
     public TypedSqlParameter AsInputOutput() =>
         WithDirection(ParameterDirection.InputOutput);
 
     /// <summary>
     /// Gets the output value using CLR casting rules without silent conversion.
     /// </summary>
+    /// <typeparam name="T">The expected CLR output value type.</typeparam>
+    /// <returns>The output value, or <see langword="null"/> when the database value is null and <typeparamref name="T"/> can represent null.</returns>
+    /// <exception cref="InvalidOperationException">The parameter has not been materialized, or the database value is null and <typeparamref name="T"/> is a non-nullable value type.</exception>
+    /// <exception cref="InvalidCastException">The materialized output value is not assignable to <typeparamref name="T"/>.</exception>
     public T? GetValue<T>()
     {
         var value = OutputValue;
@@ -117,6 +133,9 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
     }
 
     /// <inheritdoc />
+    /// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="NotSupportedException"><paramref name="command"/> is not a <see cref="SqlCommand"/>.</exception>
     public void AddParameter(IDbCommand command, string name)
     {
         if (command is null)
@@ -145,20 +164,9 @@ public sealed class TypedSqlParameter : SqlMapper.ICustomQueryParameter
         parameter.SqlDbType = SqlDbType;
         parameter.Direction = Direction;
 
-        if (Size.HasValue)
-        {
-            parameter.Size = Size.Value;
-        }
-
-        if (Precision.HasValue)
-        {
-            parameter.Precision = Precision.Value;
-        }
-
-        if (Scale.HasValue)
-        {
-            parameter.Scale = Scale.Value;
-        }
+        parameter.Size = Size.GetValueOrDefault();
+        parameter.Precision = Precision.GetValueOrDefault();
+        parameter.Scale = Scale.GetValueOrDefault();
 
         materializedParameter = parameter;
     }

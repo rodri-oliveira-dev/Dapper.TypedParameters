@@ -435,7 +435,7 @@ public sealed class TypedSqlParameterTests
     {
         var typedParameter = SqlParam.Decimal(-123.45M, 18, 2);
         using var command = new SqlCommand();
-        var existing = command.Parameters.Add("Amount", SqlDbType.Int);
+        var existing = command.Parameters.Add("Amount", SqlDbType.VarChar, 100);
 
         typedParameter.AddParameter(command, "Amount");
 
@@ -443,6 +443,7 @@ public sealed class TypedSqlParameterTests
         Assert.Same(existing, parameter);
         Assert.Equal(-123.45M, parameter.Value);
         Assert.Equal(SqlDbType.Decimal, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
         Assert.Equal((byte)18, parameter.Precision);
         Assert.Equal((byte)2, parameter.Scale);
     }
@@ -462,6 +463,47 @@ public sealed class TypedSqlParameterTests
         Assert.Same(value, parameter.Value);
         Assert.Equal(SqlDbType.Binary, parameter.SqlDbType);
         Assert.Equal(2, parameter.Size);
+    }
+
+    [Fact]
+    public void AddParameter_resets_precision_and_scale_when_reusing_parameter_without_declared_decimal_metadata()
+    {
+        var typedParameter = SqlParam.VarChar("active", 20);
+        using var command = new SqlCommand();
+        var existing = command.Parameters.Add("Status", SqlDbType.Decimal);
+        existing.Precision = 18;
+        existing.Scale = 2;
+
+        typedParameter.AddParameter(command, "Status");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Equal("active", parameter.Value);
+        Assert.Equal(SqlDbType.VarChar, parameter.SqlDbType);
+        Assert.Equal(20, parameter.Size);
+        Assert.Equal(0, parameter.Precision);
+        Assert.Equal(0, parameter.Scale);
+    }
+
+    [Fact]
+    public void AddParameter_resets_scalar_metadata_when_reusing_parameter_for_unscaled_type()
+    {
+        var typedParameter = SqlParam.Int(42);
+        using var command = new SqlCommand();
+        var existing = command.Parameters.Add("Value", SqlDbType.Decimal);
+        existing.Size = 100;
+        existing.Precision = 18;
+        existing.Scale = 2;
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<SqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Equal(42, parameter.Value);
+        Assert.Equal(SqlDbType.Int, parameter.SqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal(0, parameter.Precision);
+        Assert.Equal(0, parameter.Scale);
     }
 
     [Fact]
