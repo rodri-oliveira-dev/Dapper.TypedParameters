@@ -36,6 +36,29 @@ VERIFY AFTER FIRST PR ANALYSIS
 BranchProtection:
 PENDING HUMAN VERIFICATION
 
+NewCodeDefinition:
+previous_version
+
+NewCodeDefinitionSource:
+Public SonarCloud settings API for `sonar.leak.period`.
+
+NewCodeBaseline:
+No previous project version baseline was available in the first recorded public
+analysis. The failed analysis recorded project version `not provided` and issue
+search with `inNewCodePeriod=true` returned all 13 unresolved issues.
+
+NewCodeDefinitionChangeRequired:
+No for Q02. The repository-side remediation fixes the concrete issues exposed by
+the first analysis without weakening the Clean as You Code policy. Do not change
+the New Code definition remotely unless a later CI run proves the remaining
+baseline is still inconsistent with Sonar adoption policy.
+
+SecurityHotspotReview:
+NOT REQUIRED FOR Q02
+
+SecurityHotspotReviewReason:
+Public SonarCloud hotspot search returned 0 hotspots for `main`.
+
 HumanVerification:
 PENDING
 

@@ -14,53 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Assert-True {
-    param(
-        [bool] $Condition,
-        [string] $Message
-    )
-
-    if (-not $Condition) {
-        throw $Message
-    }
-}
-
-function Invoke-LoggedCommand {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string] $FilePath,
-
-        [Parameter(Mandatory = $true)]
-        [string[]] $Arguments,
-
-        [Parameter(Mandatory = $true)]
-        [string] $WorkingDirectory,
-
-        [int] $RetryCount = 1
-    )
-
-    for ($attempt = 1; $attempt -le $RetryCount; $attempt++) {
-        Write-Host "> $FilePath $($Arguments -join ' ')"
-        Push-Location -LiteralPath $WorkingDirectory
-        try {
-            & $FilePath @Arguments
-        }
-        finally {
-            Pop-Location
-        }
-
-        if ($LASTEXITCODE -eq 0) {
-            return
-        }
-
-        if ($attempt -lt $RetryCount) {
-            Write-Warning "Command failed with exit code $LASTEXITCODE. Retrying ($($attempt + 1)/$RetryCount)..."
-            Start-Sleep -Seconds (2 * $attempt)
-        }
-    }
-
-    throw "Command failed with exit code $LASTEXITCODE."
-}
+. (Join-Path $PSScriptRoot "PackageConsumption.Common.ps1")
 
 function Get-ExactPackage {
     param(
@@ -411,7 +365,7 @@ try {
             -Id $PackageId `
             -Version $package.Version
 
-        Invoke-LoggedCommand `
+        Show-LoggedCommand `
             -FilePath "dotnet" `
             -Arguments @("restore", $projectPath, "--configfile", $nugetConfig, "--packages", $nugetPackages) `
             -WorkingDirectory $consumerDirectory `
@@ -430,12 +384,12 @@ try {
         Assert-True ($cachedPackageHash -eq $packageHash) `
             "Restored package hash does not match the local .nupkg."
 
-        Invoke-LoggedCommand `
+        Show-LoggedCommand `
             -FilePath "dotnet" `
             -Arguments @("build", $projectPath, "--configuration", "Release", "--no-restore") `
             -WorkingDirectory $consumerDirectory
 
-        Invoke-LoggedCommand `
+        Show-LoggedCommand `
             -FilePath "dotnet" `
             -Arguments @("run", "--project", $projectPath, "--configuration", "Release", "--no-build") `
             -WorkingDirectory $consumerDirectory
