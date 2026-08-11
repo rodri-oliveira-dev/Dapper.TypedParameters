@@ -1,11 +1,24 @@
 # Output Parameters
 
-[English](output-parameters.md) | [Português (Brasil)](output-parameters.pt-BR.md)
+English | [Português (Brasil)](output-parameters.pt-BR.md)
 
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
 Scalar parameters can be configured as `Output` or `InputOutput` with fluent
 methods. Table-valued parameters are input-only in this API.
+
+## Lifecycle
+
+```text
+create parameter
+  -> pass the same instance to Dapper
+  -> execute the command
+  -> read OutputValue or GetValue<T>()
+```
+
+Read output values only after Dapper has materialized the parameter and command
+execution has completed. Reading before materialization throws
+`InvalidOperationException`.
 
 ## Output
 
@@ -47,9 +60,6 @@ await connection.ExecuteAsync(
 int id = customerId.GetValue<int>();
 ```
 
-Keep the same parameter instance that you pass to Dapper. Read `OutputValue` or
-`GetValue<T>()` only after `Execute` or `ExecuteAsync` completes.
-
 ## InputOutput
 
 ```csharp
@@ -63,21 +73,27 @@ await connection.ExecuteAsync(
 int next = counter.GetValue<int>();
 ```
 
-## DBNull.Value
-
-`OutputValue` normalizes `DBNull.Value` to `null`.
+## OutputValue
 
 ```csharp
-string? value = output.GetValue<string?>();
+object? raw = customerId.OutputValue;
 ```
 
-For non-nullable value types, `GetValue<T>()` throws if the database value is
-null. It does not return `default` silently.
+`OutputValue` returns the materialized provider value after execution.
+`DBNull.Value` is normalized to `null`.
 
-`GetValue<T>()` uses normal CLR casting rules. It does not parse strings or call
-`Convert.ChangeType`.
+## GetValue<T>()
 
-## Concurrency and reuse
+```csharp
+int id = customerId.GetValue<int>();
+string? optionalCode = code.GetValue<string?>();
+```
+
+`GetValue<T>()` uses normal CLR casting rules. It does not parse strings, call
+`Convert.ChangeType`, or return `default` silently for database null assigned to
+a non-nullable value type. Incompatible casts throw `InvalidCastException`.
+
+## Reuse
 
 Output parameter instances retain the latest materialized `SqlParameter`
 internally. Reuse is supported for non-concurrent commands, but the same output

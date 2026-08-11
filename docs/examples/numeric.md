@@ -1,6 +1,6 @@
 # Numeric Parameters
 
-[English](numeric.md) | [Português (Brasil)](numeric.pt-BR.md)
+English | [Português (Brasil)](numeric.pt-BR.md)
 
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
@@ -36,28 +36,20 @@ await connection.ExecuteAsync(
     });
 ```
 
-## Decimal precision and scale
+## Decimal Precision and Scale
 
 ```csharp
-await connection.ExecuteAsync(
-    """
-    INSERT INTO dbo.Invoices (CustomerId, Amount)
-    VALUES (@CustomerId, @Amount);
-    """,
-    new
-    {
-        CustomerId = SqlParam.BigInt(123456789L),
-        Amount = SqlParam.Decimal(123.45M, precision: 18, scale: 2)
-    });
+Amount = SqlParam.Decimal(123.45M, precision: 18, scale: 2)
 ```
 
-`precision` must be 1 through 38. `scale` must be 0 through `precision`.
+`precision` and `scale` are explicit parameter metadata. `precision` must be 1
+through 38. `scale` must be 0 through `precision`.
 
 The library does not manually round decimal values. Valid conversions, rounding,
 and range behavior during execution remain owned by `Microsoft.Data.SqlClient`
 and SQL Server.
 
-## Floating-point and money
+## Floating-Point and Money Types
 
 ```csharp
 Temperature = SqlParam.Real(23.5F)
@@ -66,13 +58,14 @@ Price = SqlParam.Money(12.34M)
 Fee = SqlParam.SmallMoney(1.23M)
 ```
 
-Use these factories only when the database contract uses the corresponding SQL
-Server type.
+Use `money` and `smallmoney` only when the database contract uses those SQL
+Server types. For many application domains, an explicit `decimal(precision,
+scale)` contract is easier to reason about.
 
-## Null values
+## Null Values
 
 ```csharp
 Discount = SqlParam.Decimal(null, precision: 9, scale: 4)
 ```
 
-`null` is materialized as `DBNull.Value`.
+`null` is converted to `DBNull.Value` when the parameter is materialized.

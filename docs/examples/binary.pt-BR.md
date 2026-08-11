@@ -7,12 +7,12 @@
 Factories binárias e de identificadores cobrem `uniqueidentifier`, `binary`,
 `varbinary` e `varbinary(max)`.
 
-| Factory | Tipo SQL Server |
-| --- | --- |
-| `SqlParam.UniqueIdentifier(value)` | `uniqueidentifier` |
-| `SqlParam.Binary(value, size)` | `binary(size)` |
-| `SqlParam.VarBinary(value, size)` | `varbinary(size)` |
-| `SqlParam.VarBinaryMax(value)` | `varbinary(max)` |
+| Factory | Tipo SQL Server | Tamanho |
+| --- | --- | --- |
+| `SqlParam.UniqueIdentifier(value)` | `uniqueidentifier` | nenhum |
+| `SqlParam.Binary(value, size)` | `binary(size)` | 1 a 8.000 |
+| `SqlParam.VarBinary(value, size)` | `varbinary(size)` | 1 a 8.000 |
+| `SqlParam.VarBinaryMax(value)` | `varbinary(max)` | `Size = -1` |
 
 ## uniqueidentifier
 
@@ -25,7 +25,8 @@ var file = await connection.QuerySingleOrDefaultAsync<FileRow>(
     });
 ```
 
-`Guid.Empty` é aceito. `null` é materializado como `DBNull.Value`.
+`Guid.Empty` é aceito. `null` é convertido para `DBNull.Value` quando o
+parâmetro é materializado.
 
 ## binary e varbinary
 
@@ -53,14 +54,14 @@ Payload = SqlParam.VarBinaryMax(payload)
 
 `VarBinaryMax` usa `SqlDbType.VarBinary` com `Size = -1`.
 
-## Arrays vazios e null
+## Arrays Vazios e Null
 
 ```csharp
 EmptyPayload = SqlParam.VarBinary(Array.Empty<byte>(), 1)
 MissingPayload = SqlParam.VarBinary(null, 1)
 ```
 
-Arrays vazios permanecem arrays vazios. Somente `null` é materializado como
+Arrays vazios permanecem arrays vazios. Somente `null` é convertido para
 `DBNull.Value`.
 
 A biblioteca armazena a referência do `byte[]` fornecido. Ela não copia arrays,

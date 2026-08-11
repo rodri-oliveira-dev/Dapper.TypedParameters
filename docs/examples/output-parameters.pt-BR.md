@@ -7,6 +7,19 @@
 Parâmetros escalares podem ser configurados como `Output` ou `InputOutput` com
 métodos fluentes. Table-valued parameters são input-only nesta API.
 
+## Lifecycle
+
+```text
+criar parâmetro
+  -> passar a mesma instância ao Dapper
+  -> executar o comando
+  -> ler OutputValue ou GetValue<T>()
+```
+
+Leia valores de saída somente depois que o Dapper materializar o parâmetro e a
+execução do comando terminar. Ler antes da materialização lança
+`InvalidOperationException`.
+
 ## Output
 
 Stored procedure:
@@ -47,9 +60,6 @@ await connection.ExecuteAsync(
 int id = customerId.GetValue<int>();
 ```
 
-Guarde a mesma instância de parâmetro passada ao Dapper. Leia `OutputValue` ou
-`GetValue<T>()` somente depois que `Execute` ou `ExecuteAsync` terminar.
-
 ## InputOutput
 
 ```csharp
@@ -63,22 +73,29 @@ await connection.ExecuteAsync(
 int next = counter.GetValue<int>();
 ```
 
-## DBNull.Value
-
-`OutputValue` normaliza `DBNull.Value` para `null`.
+## OutputValue
 
 ```csharp
-string? value = output.GetValue<string?>();
+object? raw = customerId.OutputValue;
 ```
 
-Para value types não nullable, `GetValue<T>()` lança exceção se o valor do banco
-for null. Ele não retorna `default` silenciosamente.
+`OutputValue` retorna o valor materializado pelo provider depois da execução.
+`DBNull.Value` é normalizado para `null`.
 
-`GetValue<T>()` usa regras normais de cast CLR. Ele não faz parsing de strings
-nem chama `Convert.ChangeType`.
+## GetValue<T>()
 
-## Concorrência e reuso
+```csharp
+int id = customerId.GetValue<int>();
+string? optionalCode = code.GetValue<string?>();
+```
 
-Instâncias de parâmetro output retêm internamente o `SqlParameter` materializado
+`GetValue<T>()` usa regras normais de cast CLR. Ele não faz parsing de strings,
+não chama `Convert.ChangeType` e não retorna `default` silenciosamente para null
+do banco atribuído a um value type não nullable. Casts incompatíveis lançam
+`InvalidCastException`.
+
+## Reuso
+
+Instâncias de parâmetros output retêm internamente o `SqlParameter` materializado
 mais recente. Reuso é suportado para comandos não concorrentes, mas a mesma
 instância output não deve ser compartilhada concorrentemente entre comandos.

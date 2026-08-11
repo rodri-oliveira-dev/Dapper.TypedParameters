@@ -1,11 +1,11 @@
 # Temporal Parameters
 
-[English](temporal.md) | [Português (Brasil)](temporal.pt-BR.md)
+English | [Português (Brasil)](temporal.pt-BR.md)
 
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
-Temporal factories expose SQL Server date and time types using modern CLR types
-where appropriate.
+Temporal factories expose SQL Server date and time types using the CLR types
+accepted by the public API.
 
 | Factory | SQL Server type | CLR type |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ await connection.ExecuteAsync(
 `DateOnly` is materialized as `DateTime` at midnight. `TimeOnly` is materialized
 as `TimeSpan`.
 
-## datetime, smalldatetime, datetime2
+## datetime, smalldatetime, and datetime2
 
 ```csharp
 CreatedAt = SqlParam.DateTime(createdAt)

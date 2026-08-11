@@ -5,7 +5,7 @@
 [Voltar ao README](../README.pt-BR.md) | [Motivação](motivation.pt-BR.md)
 
 Este guia mostra padrões básicos de Dapper com
-`Dapper.TypedParameters.SqlServer`.
+`Dapper.TypedParameters.SqlServer` 1.0.0.
 
 ## Pré-requisitos
 
@@ -13,16 +13,22 @@ Este guia mostra padrões básicos de Dapper com
 - Dapper.
 - `Microsoft.Data.SqlClient`.
 - Um banco SQL Server.
-- Um pacote local enquanto o pacote ainda não estiver publicado no NuGet.
 
-Enquanto o pacote não estiver publicado, consuma-o a partir de uma origem local
-usando o Package ID NuGet planejado:
+## Instalação
+
+Instale o pacote stable atual pelo NuGet.org:
 
 ```bash
-dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
+dotnet add package TypedParameters.Dapper.SqlServer
 ```
 
-O namespace C# permanece:
+Para uma instalação reproduzível da versão 1.0.0:
+
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0
+```
+
+Use o namespace do pacote no C#:
 
 ```csharp
 using Dapper.TypedParameters.SqlServer;
@@ -36,7 +42,7 @@ using Dapper.TypedParameters.SqlServer;
 using Microsoft.Data.SqlClient;
 ```
 
-## Criar uma conexão
+## Criar uma Conexão
 
 ```csharp
 await using var connection = new SqlConnection(connectionString);
@@ -100,7 +106,7 @@ int rows = await connection.ExecuteAsync(
     });
 ```
 
-## Valores null
+## Valores Nulos
 
 ```csharp
 await connection.ExecuteAsync(
@@ -119,21 +125,7 @@ await connection.ExecuteAsync(
 `null` é convertido para `DBNull.Value` quando o parâmetro é materializado para
 `Microsoft.Data.SqlClient`.
 
-## Execução async
-
-A biblioteca implementa `SqlMapper.ICustomQueryParameter` do Dapper, então
-funciona com os métodos async normais do Dapper:
-
-```csharp
-int count = await connection.QuerySingleAsync<int>(
-    "SELECT COUNT(*) FROM dbo.Customers WHERE StateCode = @StateCode;",
-    new
-    {
-        StateCode = SqlParam.Char("SP", 2)
-    });
-```
-
-## Múltiplos parâmetros
+## Múltiplos Parâmetros
 
 ```csharp
 var invoice = await connection.QuerySingleAsync<Invoice>(
@@ -150,7 +142,7 @@ var invoice = await connection.QuerySingleAsync<Invoice>(
     });
 ```
 
-## Exemplos especializados
+## Exemplos Especializados
 
 - [Strings](examples/strings.pt-BR.md)
 - [Numéricos](examples/numeric.pt-BR.md)

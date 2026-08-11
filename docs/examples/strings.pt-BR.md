@@ -15,7 +15,7 @@ Factories de string declaram metadados SQL Server de string explicitamente.
 | `SqlParam.VarCharMax(value)` | `varchar(max)` | `Size = -1` |
 | `SqlParam.NVarCharMax(value)` | `nvarchar(max)` | `Size = -1` |
 
-## varchar e nvarchar
+## Unicode e Não Unicode
 
 ```csharp
 var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
@@ -32,21 +32,23 @@ var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
     });
 ```
 
-A biblioteca não presume que `varchar` é melhor que `nvarchar`. Escolha a
-factory que corresponde ao schema ou ao contrato da stored procedure.
+Escolha `varchar` ou `nvarchar` de acordo com o schema ou o contrato da stored
+procedure. A biblioteca não trata um como inerentemente melhor ou mais rápido.
 
-## Strings de tamanho fixo
+## Tamanho Fixo e Variável
 
 ```csharp
 StateCode = SqlParam.Char("SP", 2)
-LanguageCode = SqlParam.NChar("A", 1)
+LanguageCode = SqlParam.NChar("PT", 2)
+Nickname = SqlParam.VarChar("ada", 40)
+DisplayName = SqlParam.NVarChar("Ada Lovelace", 100)
 ```
 
-A biblioteca declara o tipo SQL fixo e o tamanho. SQL Server e
-`Microsoft.Data.SqlClient` controlam o comportamento de armazenamento de tamanho
-fixo.
+A biblioteca declara o tipo SQL fixo ou variável e o tamanho solicitado. SQL
+Server e `Microsoft.Data.SqlClient` controlam armazenamento, padding e conversões
+durante a execução.
 
-## Tipos max
+## Tipos MAX
 
 ```csharp
 AnsiPayload = SqlParam.VarCharMax(payload)
@@ -56,15 +58,15 @@ UnicodePayload = SqlParam.NVarCharMax(payload)
 Use as factories explícitas de `max` em vez de passar `-1` para factories com
 tamanho limitado.
 
-## Valores null
+## Valores Nulos
 
 ```csharp
 Nickname = SqlParam.NVarChar(null, 80)
 ```
 
-`null` é materializado como `DBNull.Value`.
+`null` é convertido para `DBNull.Value` quando o parâmetro é materializado.
 
-## Observações sobre tamanho
+## Observações Sobre Tamanho
 
 Para `varchar` e `char`, tamanhos SQL Server são declarados em bytes. A relação
 entre bytes e caracteres depende dos dados e da configuração do SQL Server. A

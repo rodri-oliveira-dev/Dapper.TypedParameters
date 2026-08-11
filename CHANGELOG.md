@@ -8,7 +8,7 @@
 
 ## 1.0.0
 
-- Prepares the first stable release of `TypedParameters.Dapper.SqlServer`.
+- Publishes the first stable release of `TypedParameters.Dapper.SqlServer`.
 - Stabilizes the public API contract validated by `1.0.0-rc.1`.
 - Supports explicit SQL Server scalar parameters for strings, numeric values,
   binary values, identifiers, and temporal values.
@@ -24,12 +24,12 @@
   explicit `TypeName` and caller-provided `DataTable`.
 - Uses SDK package validation with `1.0.0-rc.1` as the compatibility baseline
   for the stable package.
-- Validates public package consumption from NuGet.org for `1.0.0-rc.1`.
+- Validates public package consumption from NuGet.org for `1.0.0-rc.1` before
+  the stable release.
 - Keeps the Trusted Publishing workflow for NuGet.org publication without a
   long-lived NuGet API key.
 
-This section prepares the stable release. The package is not published by this
-prompt.
+This is the first stable release.
 
 ## 1.0.0-rc.1
 

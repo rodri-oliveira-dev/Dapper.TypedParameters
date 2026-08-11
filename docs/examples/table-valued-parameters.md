@@ -1,13 +1,13 @@
 # Table-Valued Parameters
 
-[English](table-valued-parameters.md) | [Português (Brasil)](table-valued-parameters.pt-BR.md)
+English | [Português (Brasil)](table-valued-parameters.pt-BR.md)
 
 [Back to README](../../README.md) | [Getting started](../getting-started.md)
 
 Table-valued parameters use an existing SQL Server user-defined table type and a
 caller-supplied `DataTable`.
 
-## Create the table type
+## Create the Table Type
 
 ```sql
 CREATE TYPE dbo.CustomerBatch AS TABLE
@@ -18,7 +18,7 @@ CREATE TYPE dbo.CustomerBatch AS TABLE
 );
 ```
 
-The library does not create this type.
+The library does not create this user-defined table type automatically.
 
 ## Build the DataTable
 
@@ -55,10 +55,11 @@ int rows = await connection.ExecuteAsync(
     });
 ```
 
-`SqlParam.TableValued(typeName, value)` materializes `SqlDbType.Structured`,
-`TypeName`, the supplied `DataTable`, and `ParameterDirection.Input`.
+`SqlParam.TableValued(typeName, value)` materializes a structured parameter with
+`SqlDbType.Structured`, the supplied `TypeName`, the supplied `DataTable`, and
+`ParameterDirection.Input`.
 
-## Empty tables
+## Empty Tables
 
 An empty `DataTable` is supported when its columns are declared:
 
@@ -74,13 +75,13 @@ var parameter = SqlParam.TableValued("dbo.CustomerBatch", customers);
 Use an empty table when the intended value is an empty set. A null `DataTable`
 is rejected.
 
-## Schema responsibility
+## Schema Responsibility
 
 The caller is responsible for:
 
 - creating the user-defined table type;
 - choosing the correct `TypeName`;
-- building a `DataTable` whose columns match the table type;
+- building a `DataTable` whose columns match the user-defined table type;
 - handling provider or SQL Server errors for schema mismatches.
 
 The library does not discover table type schema, map POCOs, query SQL Server, or

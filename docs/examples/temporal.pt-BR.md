@@ -4,8 +4,8 @@
 
 [Voltar ao README](../../README.pt-BR.md) | [Primeiros passos](../getting-started.pt-BR.md)
 
-Factories temporais expõem tipos SQL Server de data e hora usando tipos CLR
-modernos quando apropriado.
+Factories temporais expõem tipos SQL Server de data e hora usando os tipos CLR
+aceitos pela API pública.
 
 | Factory | Tipo SQL Server | Tipo CLR |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ await connection.ExecuteAsync(
 `DateOnly` é materializado como `DateTime` à meia-noite. `TimeOnly` é
 materializado como `TimeSpan`.
 
-## datetime, smalldatetime, datetime2
+## datetime, smalldatetime e datetime2
 
 ```csharp
 CreatedAt = SqlParam.DateTime(createdAt)
