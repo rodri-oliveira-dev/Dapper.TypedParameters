@@ -1,4 +1,6 @@
-Last completed prompt: 018
+Last completed prompt: 019
+
+Current prompt: None
 
 Current status: Completed
 
@@ -11,11 +13,20 @@ APPROVED
 Feature freeze:
 Active
 
+RC readiness:
+READY FOR 1.0.0-RC.1
+
+RC version:
+1.0.0-rc.1
+
 Last expected commit:
-refactor: stabilize public API for 1.0
+chore: prepare 1.0.0-rc.1
+
+Next action:
+Human review, merge, tag, rehearsal and RC publication
 
 Next prompt:
-019-rc1-preparation
+020-stable-preparation
 
 Preview public consumption:
 Passed

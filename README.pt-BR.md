@@ -7,6 +7,32 @@ tipados para Dapper usando `Microsoft.Data.SqlClient`. A biblioteca ajuda o
 chamador a declarar os metadados do parâmetro enviados ao provider, como tipo,
 tamanho, precisão, escala, direção e nome de tipo para table-valued parameters.
 
+## Status de release
+
+Stable atual:
+
+```text
+Nenhum ainda
+```
+
+Release candidate atual:
+
+```text
+Nenhum publicado ainda
+```
+
+Proximo release candidate:
+
+```text
+1.0.0-rc.1
+```
+
+Preview publico atual:
+
+```text
+0.1.0-preview.1
+```
+
 ## Por quê?
 
 Dapper torna o envio de parâmetros conveniente:
@@ -108,17 +134,23 @@ específico.
 
 ## Instalação
 
-Instale pelo NuGet.org depois que o pacote for publicado:
+Instale o preview publico atual pelo NuGet.org:
 
 ```bash
 dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1
+```
+
+Depois que o workflow de release publicar o proximo RC, instale com:
+
+```bash
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0-rc.1
 ```
 
 Para testar uma build local ainda não publicada a partir deste repositório:
 
 ```bash
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --output ./artifacts/packages
-dotnet add package TypedParameters.Dapper.SqlServer --version 0.1.0-preview.1 --source ./artifacts/packages
+dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0-rc.1 --source ./artifacts/packages
 ```
 
 Package ID NuGet:

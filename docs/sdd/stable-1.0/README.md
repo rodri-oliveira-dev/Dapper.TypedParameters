@@ -15,8 +15,8 @@ memoria de conversas anteriores:
 
 1. `017-public-nuget-consumption`
 2. `018-public-api-freeze`
-3. `019-rc-release-rehearsal`
-4. `020-stable-release-readiness`
+3. `019-rc1-preparation`
+4. `020-stable-preparation`
 
 Os Prompts 17, 18 e 19 usam a branch:
 

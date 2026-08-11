@@ -2,10 +2,29 @@
 
 ## Unreleased
 
-- Stabilizes the public API contract for the 1.0 candidate without adding new
-  public APIs.
-- Resets scalar `SqlParameter` metadata that is not declared by the current
-  `TypedSqlParameter` when reusing an existing provider parameter.
+## 1.0.0-rc.1
+
+- Prepares the first release candidate for the frozen 1.0 public API contract.
+- Keeps the RC feature-complete without adding new public APIs after the freeze.
+- Supports explicit SQL Server scalar parameters for strings, numeric values,
+  binary values, identifiers, and temporal values.
+- Supports scalar output and input/output parameters through `AsOutput()`,
+  `AsInputOutput()`, `OutputValue`, and `GetValue<T>()`.
+- Supports table-valued parameters through `SqlParam.TableValued(...)` with
+  explicit `TypeName` and caller-provided `DataTable`.
+- Provides equivalent package assets and public API for `net8.0` and `net10.0`.
+- Keeps package identity `TypedParameters.Dapper.SqlServer` separate from
+  assembly and namespace identity `Dapper.TypedParameters.SqlServer`.
+- Maintains package quality checks for contents, symbols, SourceLink, public
+  API baselines, SDK package validation, local package consumption, public
+  preview consumption, and vulnerability auditing.
+- Uses `0.1.0-preview.1` as the SDK package validation baseline for binary and
+  public API compatibility.
+- Stabilizes scalar provider-parameter reuse before the RC by resetting
+  undeclared `Size`, `Precision`, and `Scale` metadata to provider defaults
+  when reusing an existing `SqlParameter`.
+
+This is a release candidate and is not the stable `1.0.0` release.
 
 ## 0.1.0-preview.1
 
@@ -17,13 +36,17 @@
 - Adiciona versoes em portugues brasileiro para os guias e exemplos linkados
   pelo README.
 - Adiciona parametros SQL Server numericos e booleanos explicitos para Dapper.
-- Inclui `bit`, `tinyint`, `smallint`, `int`, `bigint`, `real`, `float`, `decimal`, `money` e `smallmoney`.
+- Inclui `bit`, `tinyint`, `smallint`, `int`, `bigint`, `real`, `float`,
+  `decimal`, `money` e `smallmoney`.
 - Configura `Precision` e `Scale` declarados para `decimal`.
-- Adiciona parametros `uniqueidentifier`, `binary`, `varbinary` e `varbinary(max)`.
-- Preserva arrays binarios vazios e converte somente `null` para `DBNull.Value`.
+- Adiciona parametros `uniqueidentifier`, `binary`, `varbinary` e
+  `varbinary(max)`.
+- Preserva arrays binarios vazios e converte somente `null` para
+  `DBNull.Value`.
 - Adiciona parametros SQL Server temporais para `date`, `time`, `datetime`,
   `smalldatetime`, `datetime2` e `datetimeoffset`.
-- Adiciona suporte fluente a `Output` e `InputOutput` para parametros escalares.
+- Adiciona suporte fluente a `Output` e `InputOutput` para parametros
+  escalares.
 - Adiciona leitura de outputs por `OutputValue` e `GetValue<T>()`.
 - Normaliza output `DBNull.Value` para `null` e rejeita casts incompativeis sem
   conversao silenciosa.

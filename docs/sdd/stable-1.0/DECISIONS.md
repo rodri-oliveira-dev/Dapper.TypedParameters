@@ -23,10 +23,16 @@
     rules.
 12. Scalar provider-parameter reuse: declared scalar metadata is applied and
     undeclared scalar metadata is reset to provider default `0`.
+13. First release candidate version: `1.0.0-rc.1`.
+14. SDK package validation baseline: `0.1.0-preview.1` is used as the hard
+    binary and public API compatibility baseline for the RC. The behavioral
+    scalar metadata reset from Prompt 018 is documented as an intentional
+    pre-1.0 stabilization adjustment, not hidden by a suppression.
 
 ## Pending
 
-- RC release rehearsal for Prompt 019.
+- External RC release, including merge, tag, rehearsal, publication, and public
+  consumption validation.
 - Stable release readiness for Prompt 020.
 
 ## Public API Freeze
