@@ -38,3 +38,22 @@
 23. Fork PR policy: never expose `SONAR_TOKEN` to untrusted fork code. Fork PRs
     cannot run authenticated Sonar analysis through `pull_request` secrets; the
     job fails early when the secret is unavailable.
+24. Q02 Quality Gate root cause: the first Sonar analysis treated historical
+    repository content as New Code under the inherited `previous_version` New
+    Code definition, exposing a real GitHub Actions dependency pinning
+    vulnerability and duplicated validation-script lines to the Clean as You
+    Code gate.
+25. Q02 Quality Gate policy: unchanged.
+26. Q02 New Code Coverage threshold: unchanged at 80%.
+27. Q02 Quality Gate wait: enabled.
+28. Q02 `TableValuedSqlParameter.SqlDbType` S2325 decision: valid but
+    intentionally accepted with targeted source suppression because the member
+    is frozen public instance metadata in the 1.0 candidate API.
+29. Q02 `TableValuedSqlParameter.Direction` S2325 decision: valid but
+    intentionally accepted with targeted source suppression because the member
+    is frozen public instance metadata in the 1.0 candidate API.
+30. Q02 public API breaking change: no.
+31. Q02 RC compatibility: preserved.
+32. Q02 external Sonar configuration required: no repository-side remediation
+    requires changing the Quality Gate, coverage threshold, Quality Gate wait,
+    Security Hotspots, or New Code definition remotely.

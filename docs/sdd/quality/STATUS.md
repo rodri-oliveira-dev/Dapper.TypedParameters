@@ -1,5 +1,5 @@
 Last completed prompt:
-Q01
+Q02
 
 Current prompt:
 None
@@ -8,7 +8,7 @@ Current status:
 Completed
 
 Branch:
-ci/sonarqube-cloud
+ci/sonarqube-quality-gate-fix
 
 Sonar project key:
 rodri-oliveira-dev_Dapper.TypedParameters
@@ -20,7 +20,39 @@ Expected repository secret:
 SONAR_TOKEN
 
 Expected commit:
-ci: enforce SonarQube quality gate
+ci: resolve SonarQube quality gate failure
+
+Previous failed run:
+31494417537
+
+Previous failed job:
+93788756494
+
+Quality Gate root cause:
+Initial Sonar adoption treated historical code as New Code under the inherited
+`previous_version` definition. The failed gate exposed a real GitHub Actions
+dependency pinning vulnerability and duplicated validation-script lines.
+
+Remediation:
+Pinned `NuGet/login` to a full commit SHA, extracted shared package-consumption
+script helpers, renamed the PowerShell command logging helper, and documented
+targeted S2325 suppressions for frozen TVP public metadata.
+
+Public API compatibility:
+Preserved
+
+Quality Gate policy:
+Unchanged
+
+Expected next CI result:
+SonarQube Cloud Quality Gate PASSED
+
+Last expected commit:
+ci: resolve SonarQube quality gate failure
+
+External action required:
+No for Q02 remediation. Branch protection remains pending human verification
+from Q01.
 
 Quality Gate enforcement:
 Enabled

@@ -1,4 +1,5 @@
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
@@ -38,11 +39,19 @@ public sealed class TableValuedSqlParameter : SqlMapper.ICustomQueryParameter
     /// <summary>
     /// Gets the SQL Server-specific parameter type.
     /// </summary>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2325:Methods and properties that don't access instance data should be static",
+        Justification = "This member is intentionally preserved as public instance metadata in the frozen 1.0 TVP contract.")]
     public SqlDbType SqlDbType => SqlDbType.Structured;
 
     /// <summary>
     /// Gets the parameter direction.
     /// </summary>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2325:Methods and properties that don't access instance data should be static",
+        Justification = "This member is intentionally preserved as public instance metadata in the frozen 1.0 TVP contract.")]
     public ParameterDirection Direction => ParameterDirection.Input;
 
     /// <inheritdoc />
