@@ -24,6 +24,12 @@ Os Prompts 17, 18 e 19 usam a branch:
 release/1.0-hardening
 ```
 
+O Prompt 20 usa a branch:
+
+```text
+release/1.0.0
+```
+
 Cada prompt deve recuperar informacao persistente somente dos arquivos
 versionados, atualizar os arquivos SDD como handoff e terminar com um unico
 commit semantico.

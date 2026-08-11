@@ -11,22 +11,22 @@ RcVersion:
 1.0.0-rc.1
 
 RcMergedToMain:
-PENDING
+COMPLETED
 
 RcTagCreated:
-PENDING
+COMPLETED
 
 RcRehearsal:
-PENDING
+COMPLETED
 
 RcPublished:
-PENDING
+COMPLETED
 
 RcPublicConsumption:
-PENDING
+COMPLETED
 
 RcPublicConsumptionVerification:
-FAILED
+COMPLETED
 
 RcPublicConsumptionVerificationDate:
 2026-08-11
@@ -35,8 +35,14 @@ RcPublicConsumptionVerificationSource:
 https://api.nuget.org/v3-flatcontainer/typedparameters.dapper.sqlserver/index.json
 
 RcPublicConsumptionVerificationResult:
-Only 0.1.0-preview.1 was available from NuGet.org. Version 1.0.0-rc.1 was not
-found, so stable 1.0.0 preparation is blocked.
+1.0.0-rc.1 was available from NuGet.org and passed isolated public package
+consumption validation for net8.0 and net10.0.
+
+RcPublishWorkflowRun:
+https://github.com/rodri-oliveira-dev/Dapper.TypedParameters/actions/runs/31490830510
+
+RcPublishedRelease:
+https://github.com/rodri-oliveira-dev/Dapper.TypedParameters/releases/tag/v1.0.0-rc.1
 
 StableVersion:
 1.0.0

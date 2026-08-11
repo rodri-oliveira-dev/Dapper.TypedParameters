@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+## 1.0.0
+
+- Prepares the first stable release of `TypedParameters.Dapper.SqlServer`.
+- Stabilizes the public API contract validated by `1.0.0-rc.1`.
+- Supports explicit SQL Server scalar parameters for strings, numeric values,
+  binary values, identifiers, and temporal values.
+- Supports `net8.0` and `net10.0` with equivalent public API and package
+  assets.
+- Supports `Microsoft.Data.SqlClient` as the only ADO.NET provider.
+- Maintains the SQL Server compatibility policy declared for SQL Server 2016
+  through SQL Server 2025, Azure SQL Database, Azure SQL Managed Instance, and
+  Azure Synapse Analytics through driver compatibility.
+- Supports scalar output and input/output parameters through `AsOutput()`,
+  `AsInputOutput()`, `OutputValue`, and `GetValue<T>()`.
+- Supports table-valued parameters through `SqlParam.TableValued(...)` with
+  explicit `TypeName` and caller-provided `DataTable`.
+- Uses SDK package validation with `1.0.0-rc.1` as the compatibility baseline
+  for the stable package.
+- Validates public package consumption from NuGet.org for `1.0.0-rc.1`.
+- Keeps the Trusted Publishing workflow for NuGet.org publication without a
+  long-lived NuGet API key.
+
+This section prepares the stable release. The package is not published by this
+prompt.
+
 ## 1.0.0-rc.1
 
 - Prepares the first release candidate for the frozen 1.0 public API contract.

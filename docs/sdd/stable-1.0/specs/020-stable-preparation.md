@@ -92,8 +92,9 @@ No new suppressions are allowed to hide incompatibility with the RC.
 
 ## Current Result
 
-The prompt is blocked because `TypedParameters.Dapper.SqlServer 1.0.0-rc.1`
-was not available from NuGet.org during validation.
+The published `TypedParameters.Dapper.SqlServer 1.0.0-rc.1` package was
+available from NuGet.org and passed isolated public package consumption
+validation for `net8.0` and `net10.0`.
 
 ## Planned Commit
 

@@ -6,25 +6,28 @@
 - Assembly: `Dapper.TypedParameters.SqlServer`
 - Namespace: `Dapper.TypedParameters.SqlServer`
 
-No stable package metadata was changed by this prompt.
+Package identity was preserved.
 
 ## Stable version
 
-Stable `1.0.0` was not prepared because the required public RC publication gate
-failed.
+Stable version prepared:
 
-Current project version remains:
+```text
+1.0.0
+```
 
-- `VersionPrefix`: `1.0.0`
-- `VersionSuffix`: `rc.1`
+The prerelease suffix was removed.
+
+Expected package artifacts:
+
+- `TypedParameters.Dapper.SqlServer.1.0.0.nupkg`
+- `TypedParameters.Dapper.SqlServer.1.0.0.snupkg`
+
+Package published by this prompt: No.
 
 ## RC public consumption
 
-Result:
-
-```text
-FAILED
-```
+The published RC was consumed directly from NuGet.org.
 
 Command:
 
@@ -32,80 +35,141 @@ Command:
 ./scripts/Test-PublicPackageConsumption.ps1 -PackageVersion 1.0.0-rc.1
 ```
 
-Observed result:
+Source:
 
 ```text
-Package 'TypedParameters.Dapper.SqlServer' version '1.0.0-rc.1' was not found
-at 'https://api.nuget.org/v3-flatcontainer/typedparameters.dapper.sqlserver/index.json'.
+https://api.nuget.org/v3/index.json
 ```
 
-Direct NuGet.org flat-container verification returned only:
+Results:
 
-```text
-0.1.0-preview.1
-```
+- `net8.0 restore: passed`
+- `net8.0 build: passed`
+- `net8.0 execution: passed`
+- `net10.0 restore: passed`
+- `net10.0 build: passed`
+- `net10.0 execution: passed`
+
+A transient file-in-use restore failure occurred on the first `net8.0` attempt;
+the script retry succeeded and the final command result was passing.
 
 ## Public API compatibility with RC
 
-Not evaluated. The published RC package required for the baseline was not
-available from NuGet.org.
+The stable candidate keeps the same public API contract as `1.0.0-rc.1`.
+
+`PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` were not changed by this
+prompt.
 
 ## Public API freeze
 
-The previously recorded 1.0 public API freeze remains in effect.
+Public API freeze remains:
 
-No public API changes were made by this prompt.
+```text
+Frozen
+```
+
+No public API changes were made after the RC.
 
 ## Target frameworks
 
-Expected TFMs remain:
+Target frameworks:
 
 - `net8.0`
 - `net10.0`
 
-No TFM changes were made.
-
 ## Dependencies
 
-Expected dependencies remain centrally managed:
+Dependencies remain centrally managed:
 
-- `Dapper`: current approved repository version.
-- `Microsoft.Data.SqlClient`: `6.1.6`.
+- `Dapper`: `2.1.79`
+- `Microsoft.Data.SqlClient`: `6.1.6`
 
 No dependency upgrades were made.
 
 ## SQL Server compatibility
 
-No SQL Server compatibility policy changes were made.
+The declared compatibility policy remains:
+
+- SQL Server 2016 through SQL Server 2025.
+- Azure SQL Database.
+- Azure SQL Managed Instance.
+- Azure Synapse Analytics.
+
+This policy follows `Microsoft.Data.SqlClient` driver compatibility.
 
 ## CI-tested SQL Server
 
-Not revalidated by this prompt because the RC publication gate failed first.
+CI integration coverage remains SQL Server 2022 through:
+
+```text
+mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04
+```
 
 ## Unit tests
 
-Not run by this prompt because the RC publication gate failed first.
+Passed:
+
+- `net8.0`: 242 tests.
+- `net10.0`: 242 tests.
 
 ## Integration tests
 
-Not run by this prompt because the RC publication gate failed first.
+Passed:
+
+- `net8.0`: 35 tests.
+- `net10.0`: 35 tests.
+
+Docker diagnostics passed with:
+
+- Client: `29.6.2-rd`
+- Server: `29.5.3`
 
 ## Local package consumption
 
-Not run. Local package consumption cannot replace public RC consumption for the
-stable readiness gate.
+Passed for stable `1.0.0` from `artifacts/packages`.
+
+Results:
+
+- `net8.0 consumer: passed`
+- `net10.0 consumer: passed`
+
+A transient file-in-use restore failure occurred on the first `net8.0` attempt;
+the script retry succeeded and the final command result was passing.
 
 ## Package validation
 
-Not run for stable `1.0.0` because stable package metadata was not prepared.
+`PackageValidationBaselineVersion` was updated to:
+
+```text
+1.0.0-rc.1
+```
+
+SDK package validation passed against the public RC baseline.
+
+Public API validation also passed through the Release build and unchanged public
+API analyzer baselines.
 
 ## RC baseline validation
 
-Not run. `1.0.0-rc.1` was not available as a public NuGet.org baseline.
+Stable `1.0.0` uses public `1.0.0-rc.1` as the SDK package validation baseline.
+
+No package validation suppressions were added.
 
 ## Security audit
 
-Not run by this prompt because the RC publication gate failed first.
+Vulnerability audit passed.
+
+Command:
+
+```bash
+dotnet list Dapper.TypedParameters.sln package --vulnerable --include-transitive
+```
+
+Result:
+
+- `Dapper.TypedParameters.SqlServer`: no vulnerable packages.
+- `Dapper.TypedParameters.SqlServer.Tests`: no vulnerable packages.
+- `Dapper.TypedParameters.SqlServer.IntegrationTests`: no vulnerable packages.
 
 ## Open issue review
 
@@ -121,39 +185,60 @@ Result:
 No open issues returned.
 ```
 
-No release blockers were identified through GitHub Issues.
+No blockers were identified for:
+
+- bug
+- regression
+- API
+- breaking
+- incorrect SQL type
+- output parameter
+- TVP
+- nullability
+- package
+- restore
 
 ## Documentation
 
-No README, README.pt-BR, or CHANGELOG stable release changes were made because
-the stable preparation gate failed.
+Updated:
+
+- `CHANGELOG.md`
+- `README.md`
+- `README.pt-BR.md`
+- stable 1.0 SDD handoff files
+
+Documentation states that this prompt prepares `1.0.0` but does not publish it.
 
 ## Release workflow
 
-The stable release workflow was not rehearsed by this prompt.
+`.github/workflows/release.yml` was audited.
 
-The earlier GitHub workflow query did not show `v1.0.0-rc.1` release workflow
-runs, and `gh release view v1.0.0-rc.1` returned:
+Confirmed:
 
-```text
-release not found
-```
+- `package_version=1.0.0` is accepted by the version regex.
+- `tag=v1.0.0` maps to `refs/tags/v1.0.0`.
+- Publish still requires `publish=true`.
+- Publish still requires the correct tag ref.
+- Publish still uses the `nuget-release` environment.
+- Publish still grants `id-token: write` only to the publish job.
+- Publish still uses `NuGet/login@v1` Trusted Publishing.
+- No long-lived NuGet API key is configured in the workflow.
 
 ## Warnings
 
-- The local `main` branch diverged from `origin/main`, so `git pull --ff-only`
-  could not complete.
-- To avoid rewriting local history, branch `release/1.0.0` was created from the
-  updated `origin/main`.
+- The GitHub release for `v1.0.0-rc.1` is not marked as prerelease.
+- The successful RC publish run `31490830510` validated, packaged, and published
+  `1.0.0-rc.1`.
+- Docker diagnostics reported local environment warnings:
+  - `No swap limit support`
+  - `daemon is not using the default seccomp profile`
+- Public and local package consumption each had one transient `net8.0` restore
+  file-in-use failure that passed on retry.
 
 ## Blockers
 
-- `RcTagCreated` is not confirmed.
-- `RcRehearsal` is not confirmed.
-- `RcPublished` is not confirmed.
-- `RcPublicConsumption` failed because `1.0.0-rc.1` was not available from
-  NuGet.org.
+None.
 
 ## Final recommendation
 
-BLOCKED
+READY FOR 1.0.0
