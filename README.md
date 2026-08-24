@@ -186,6 +186,17 @@ dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServe
 
 Integration tests use SQL Server through Docker and `Testcontainers.MsSql`.
 
+## Release Registries
+
+The protected release workflow publishes the same validated `.nupkg` to
+NuGet.org, the primary public installation source, and GitHub Packages, the
+repository-linked secondary registry. A rehearsal with `publish=false` never
+publishes; `publish=true` requires the matching version tag and approval of the
+`nuget-release` environment. NuGet.org uses Trusted Publishing, while GitHub
+Packages uses the ephemeral workflow `GITHUB_TOKEN`. After its first
+publication, the GitHub package must be made public explicitly before it can be
+consumed anonymously.
+
 ## Contributing
 
 Issues and pull requests are welcome. Please keep changes small, explicit, and
