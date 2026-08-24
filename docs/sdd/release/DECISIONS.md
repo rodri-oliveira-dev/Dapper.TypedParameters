@@ -31,9 +31,11 @@
     `net8.0` and `net10.0` applications through a local NuGet source, package
     source mapping, an isolated `NUGET_PACKAGES` cache, exact version restore,
     and hash comparison against the local package.
-19. Release provider: NuGet.org.
-20. Authentication: Trusted Publishing.
-21. Identity protocol: GitHub Actions OIDC.
+19. Release providers:
+    - NuGet.org as the primary public distribution registry.
+    - GitHub Packages as a secondary registry linked to this repository.
+20. NuGet.org authentication: Trusted Publishing.
+21. NuGet.org identity protocol: GitHub Actions OIDC.
 22. NuGet owner: `rodri-oliveira-dev`.
 23. Ownership: Individual.
 24. GitHub environment: `nuget-release`.
@@ -47,3 +49,26 @@
 29. Prompt 016 release readiness: `READY FOR PREVIEW RELEASE`.
 30. Package published during Prompt 016: No.
 31. Push, pull request, and tag during Prompt 016: No.
+32. GitHub Packages owner: `rodri-oliveira-dev`.
+33. GitHub Packages feed:
+    `https://nuget.pkg.github.com/rodri-oliveira-dev/index.json`.
+34. GitHub Packages authentication: the ephemeral workflow `GITHUB_TOKEN`;
+    no long-lived package token is permitted.
+35. GitHub Packages permission: `packages: write`, restricted to the protected
+    `publish` job.
+36. Repository association: package metadata `RepositoryUrl` must remain
+    `https://github.com/rodri-oliveira-dev/Dapper.TypedParameters`.
+37. Protected publication contract: `publish=false` performs validation and
+    packaging only; `publish=true` publishes the same previously validated
+    `.nupkg` sequentially to NuGet.org and GitHub Packages.
+38. Retry behavior: both pushes use `--skip-duplicate` so an interrupted
+    protected release can be resumed without replacing an existing version.
+39. GitHub Packages visibility: after the first publication, the repository
+    owner must explicitly make the package public before treating the feed as
+    anonymously consumable. NuGet.org remains the documented installation
+    source.
+40. GitHub Packages validation: pre-publication package content, compatibility,
+    and consumption checks apply to the exact artifact sent to both registries;
+    the push command exit status gates registry acceptance. Anonymous
+    post-publication consumption is not a release gate while package visibility
+    can still be private.

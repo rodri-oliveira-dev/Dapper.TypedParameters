@@ -1,4 +1,4 @@
-name: NuGet Release
+name: Package Release
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         default: 0.1.0-preview.1
         type: string
       publish:
-        description: Publish to NuGet.org. Leave false for rehearsal.
+        description: Publish to NuGet.org and GitHub Packages. Leave false for rehearsal.
         required: true
         default: false
         type: boolean
@@ -194,7 +194,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish to NuGet.org
+    name: Publish to NuGet.org and GitHub Packages
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: package
@@ -203,6 +203,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
 
     steps:
       - name: Validate requested version
@@ -263,7 +264,7 @@ jobs:
         with:
           user: rodri-oliveira-dev
 
-      - name: Push package
+      - name: Publish package to NuGet.org
         env:
           PACKAGE_VERSION: ${{ inputs.package_version }}
           TEMPORARY_NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
@@ -272,3 +273,26 @@ jobs:
           "artifacts/packages/TypedParameters.Dapper.SqlServer.${PACKAGE_VERSION}.nupkg"
           --api-key "${TEMPORARY_NUGET_API_KEY}"
           --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Configure GitHub Packages source
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >
+          dotnet nuget add source
+          --username "${{ github.actor }}"
+          --password "${GITHUB_TOKEN}"
+          --store-password-in-clear-text
+          --name github
+          "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+      - name: Publish package to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PACKAGE_VERSION: ${{ inputs.package_version }}
+        run: >
+          dotnet nuget push
+          "artifacts/packages/TypedParameters.Dapper.SqlServer.${PACKAGE_VERSION}.nupkg"
+          --api-key "${GITHUB_TOKEN}"
+          --source github
+          --skip-duplicate
