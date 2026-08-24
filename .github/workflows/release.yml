@@ -1,4 +1,4 @@
-name: NuGet Release
+name: Package Release
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
         default: 0.1.0-preview.1
         type: string
       publish:
-        description: Publish to NuGet.org. Leave false for rehearsal.
+        description: Publish to NuGet.org and GitHub Packages. Leave false for rehearsal.
         required: true
         default: false
         type: boolean
@@ -194,7 +194,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish to NuGet.org
+    name: Publish to NuGet.org and GitHub Packages
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: package
