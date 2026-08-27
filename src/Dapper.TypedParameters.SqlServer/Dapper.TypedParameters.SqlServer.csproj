@@ -4,11 +4,13 @@
     <AssemblyName>Dapper.TypedParameters.SqlServer</AssemblyName>
     <RootNamespace>Dapper.TypedParameters.SqlServer</RootNamespace>
     <PackageId>TypedParameters.Dapper.SqlServer</PackageId>
-    <Title>Dapper Typed Parameters for SQL Server</Title>
-    <Description>Explicit SQL Server parameter types for Dapper using Microsoft.Data.SqlClient.</Description>
-    <PackageTags>dapper;sql-server;sqlclient;ado.net;parameters;micro-orm</PackageTags>
+    <Title>Typed Parameters for Dapper - SQL Server</Title>
+    <Description>Explicit, strongly typed SQL Server parameters for Dapper using Microsoft.Data.SqlClient. Control SqlDbType, size, precision, scale, direction, and table-valued parameter metadata at the call site so parameter contracts remain visible and predictable.</Description>
+    <PackageTags>dapper;sql-server;mssql;microsoft-data-sqlclient;sqlclient;ado.net;parameters;typed-parameters;sql-parameters;table-valued-parameters;tvp;micro-orm;dotnet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rodri-oliveira-dev/Dapper.TypedParameters</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>nuget-icon.png</PackageIcon>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <VersionPrefix>1.0.0</VersionPrefix>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -31,5 +33,6 @@
 
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../resource/nuget-icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
