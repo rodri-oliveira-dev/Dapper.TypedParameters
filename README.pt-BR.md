@@ -6,59 +6,46 @@
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_Dapper.TypedParameters&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rodri-oliveira-dev_Dapper.TypedParameters)
 [![CI](https://github.com/rodri-oliveira-dev/Dapper.TypedParameters/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/Dapper.TypedParameters)
 
-`Dapper.TypedParameters` hospeda pacotes específicos por provider para metadados
-explícitos de parâmetros de banco de dados no Dapper.
+`Dapper.TypedParameters` hospeda pacotes específicos por provider para
+metadados explícitos de parâmetros de banco de dados no Dapper.
 
-Pacotes disponíveis:
+```text
+Dapper.TypedParameters
+├── TypedParameters.Dapper.SqlServer
+└── TypedParameters.Dapper.PostgreSql
+```
 
-- `TypedParameters.Dapper.SqlServer`
-- `TypedParameters.Dapper.PostgreSql` (preview)
+Os pacotes são independentes. Use o pacote SQL Server com
+`Microsoft.Data.SqlClient` e `SqlDbType`; use o pacote PostgreSQL com `Npgsql` e
+`NpgsqlDbType`.
 
-`Dapper.TypedParameters.SqlServer` fornece metadados explícitos de parâmetros SQL
-Server usando `Microsoft.Data.SqlClient`.
-
-`Dapper.TypedParameters.PostgreSql` fornece metadados explícitos de parâmetros
-PostgreSQL usando `Npgsql`.
-
-Use o provider SQL Server quando o contrato do banco é conhecido e o tipo SQL
-Server, tamanho, precisão, escala, direção ou nome do table-valued parameter deve
-ficar visível no ponto de chamada.
-
-Use o provider PostgreSQL quando o contrato do banco é conhecido e o tipo
-PostgreSQL deve ser enviado como metadado explícito `NpgsqlDbType`.
+O repositório não expõe uma base compartilhada como `TypedDbParameter`. SQL
+Server e PostgreSQL têm APIs de provider e semânticas de banco diferentes, então
+cada pacote mantém seu próprio contrato público pequeno.
 
 ## Instalação
 
-Instale o pacote stable atual pelo NuGet.org:
+Instale o provider SQL Server:
 
 ```bash
 dotnet add package TypedParameters.Dapper.SqlServer
 ```
 
-Para PostgreSQL:
+Instale o provider PostgreSQL:
 
 ```bash
-dotnet add package TypedParameters.Dapper.PostgreSql --prerelease
+dotnet add package TypedParameters.Dapper.PostgreSql
 ```
 
-Página oficial do pacote:
-[TypedParameters.Dapper.SqlServer no NuGet.org](https://www.nuget.org/packages/TypedParameters.Dapper.SqlServer/1.0.0)
+As identidades dos pacotes NuGet são separadas das identidades de assembly e
+namespace:
 
-Para uma instalação reproduzível da versão 1.0.0:
+| Pacote | Assembly | Namespace |
+| --- | --- | --- |
+| `TypedParameters.Dapper.SqlServer` | `Dapper.TypedParameters.SqlServer.dll` | `Dapper.TypedParameters.SqlServer` |
+| `TypedParameters.Dapper.PostgreSql` | `Dapper.TypedParameters.PostgreSql.dll` | `Dapper.TypedParameters.PostgreSql` |
 
-```bash
-dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0
-```
-
-A identidade do pacote NuGet é separada do assembly e do namespace:
-
-```text
-Pacote NuGet: TypedParameters.Dapper.SqlServer
-Assembly: Dapper.TypedParameters.SqlServer.dll
-Namespace: Dapper.TypedParameters.SqlServer
-```
-
-## Exemplo Mínimo
+## Exemplo SQL Server
 
 ```csharp
 using Dapper;
@@ -79,13 +66,7 @@ var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
     });
 ```
 
-```text
-.NET string
-  -> metadados SQL explícitos
-  -> parâmetro SQL Server varchar(11)
-```
-
-Exemplo preview com PostgreSQL:
+## Exemplo PostgreSQL
 
 ```csharp
 using Dapper;
@@ -96,24 +77,26 @@ await using var connection = new NpgsqlConnection(connectionString);
 
 var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
     """
-    SELECT id, name
+    SELECT id, document, payload, created_at
     FROM customers
-    WHERE id = @Id;
+    WHERE document = @Document
+      AND created_at >= @CreatedAt;
     """,
     new
     {
-        Id = PostgresParam.Uuid(id)
+        Document = PostgresParam.VarChar(document),
+        CreatedAt = PostgresParam.TimestampTz(fromUtc)
     });
 ```
 
 ## Por Quê?
 
 A inferência de parâmetros do Dapper é correta e conveniente em muitos cenários.
-O trade-off é que os metadados SQL Server enviados ao provider nem sempre ficam
-óbvios no código chamador.
+O trade-off é que os metadados enviados ao provider nem sempre ficam óbvios no
+código chamador.
 
 Quando o código já conhece o contrato do banco, metadados explícitos deixam esse
-contrato visível:
+contrato visível e testável:
 
 ```csharp
 new
@@ -129,23 +112,21 @@ new
 }
 ```
 
-A segunda forma não afirma que `varchar` é universalmente melhor que `nvarchar`.
-Ela diz que este parâmetro deve corresponder a um contrato conhecido
-`varchar(11)`.
+```csharp
+new
+{
+    Payload = PostgresParam.Jsonb(json),
+    CreatedAt = PostgresParam.TimestampTz(createdAtUtc)
+}
+```
 
-## O Problema
+A biblioteca não afirma que um tipo de banco é universalmente mais rápido que
+outro. Ela torna um contrato conhecido explícito; workloads sensíveis a
+performance ainda precisam ser medidos.
 
-SQL Server avalia parâmetros usando metadados de tipos SQL, não apenas valores
-CLR. Uma divergência de metadados pode causar conversões no SQL Server dependendo
-dos tipos envolvidos, da precedência de tipos, da collation, do formato da query,
-dos índices e do plano de execução.
+## Tipos Suportados
 
-Esta biblioteca dá ao chamador controle sobre os metadados enviados por
-`Microsoft.Data.SqlClient`. Ela não garante queries mais rápidas, não remove
-toda conversão implícita e não analisa planos de execução. Meça queries
-sensíveis a performance no seu próprio workload.
-
-## Tipos de Parâmetros Suportados
+SQL Server:
 
 | Família | Tipos SQL Server |
 | --- | --- |
@@ -156,13 +137,91 @@ sensíveis a performance no seu próprio workload.
 | Parâmetros de saída | `AsOutput()`, `AsInputOutput()`, `OutputValue`, `GetValue<T>()` |
 | Table-valued parameters | `SqlDbType.Structured` com `TypeName` explícito e `DataTable` fornecido pelo chamador |
 
-Suporte preview inicial para PostgreSQL:
+PostgreSQL:
 
-| Família | Tipos PostgreSQL |
-| --- | --- |
-| Strings | `text` |
-| Numéricos | `boolean`, `smallint`, `integer`, `bigint`, `real`, `double precision`, `money` |
-| Binários e identificadores | `uuid`, `bytea` |
+| Família | Factories | Tipos PostgreSQL |
+| --- | --- | --- |
+| Text | `Text`, `VarChar`, `Char` | `text`, `character varying`, `character` |
+| Boolean/numeric | `Boolean`, `SmallInt`, `Integer`, `BigInt`, `Real`, `Double`, `Numeric`, `Money` | `boolean`, `smallint`, `integer`, `bigint`, `real`, `double precision`, `numeric`, `money` |
+| Identifier/binary | `Uuid`, `Bytea` | `uuid`, `bytea` |
+| JSON | `Json`, `Jsonb` | `json`, `jsonb` |
+| Temporal | `Date`, `Time`, `Timestamp`, `TimestampTz`, `Interval` | `date`, `time without time zone`, `timestamp without time zone`, `timestamp with time zone`, `interval` |
+| Arrays | `Array<T>(IList<T>? value, NpgsqlDbType elementType)` | `integer[]`, `uuid[]`, `text[]` e arrays de outros tipos escalares v1 suportados |
+
+## Semântica PostgreSQL
+
+`PostgresParam.Text(value)` envia `text`. `VarChar(value)` envia
+`character varying`, e `Char(value)` envia `character`. A API PostgreSQL não
+expõe `VarChar(value, size)` nem `Char(value, size)`: os testes de integração
+mostraram que `NpgsqlParameter.Size` não faz o PostgreSQL observar um typmod
+`varchar(n)` ou `char(n)`, e valores acima do tamanho são truncados pelo Npgsql
+antes de chegar ao servidor.
+
+`PostgresParam.Numeric(value)` envia `numeric` sem restrição declarada. Precisão
+e escala não fazem parte da API pública nesta versão porque os testes de
+integração mostraram `NpgsqlParameter.Precision` e `Scale` como metadados do
+parâmetro no cliente, não como um contrato server-side comprovado de
+`numeric(p, s)`.
+
+`PostgresParam.Json(value)` mapeia para `json`.
+`PostgresParam.Jsonb(value)` mapeia para `jsonb`. A versão 1 recebe JSON textual
+fornecido pelo chamador; serialização automática de POCO está fora do escopo
+deste pacote.
+
+Factories temporais seguem a semântica PostgreSQL/Npgsql:
+
+- `Date(DateOnly?)` envia `date`.
+- `Time(TimeOnly?)` envia `time without time zone`.
+- `Timestamp(DateTime?)` envia `timestamp without time zone`; aceita valores de
+  relógio de parede com `DateTimeKind.Local` ou `DateTimeKind.Unspecified` e
+  rejeita valores UTC.
+- `TimestampTz(DateTime?)` envia `timestamp with time zone`; aceita somente
+  `DateTimeKind.Utc` e não converte valores locais ou unspecified.
+- `Interval(TimeSpan?)` envia `interval`; componentes de mês e ano de intervalos
+  PostgreSQL não podem ser representados por `TimeSpan`.
+
+`timestamptz` representa um instante. Ele não armazena o identificador da zona
+de tempo.
+
+Arrays são uma feature nativa do PostgreSQL. `PostgresParam.Array<T>(value,
+elementType)` exige um `NpgsqlDbType` escalar explícito para o elemento e envia
+`NpgsqlDbType.Array | elementType`. `null` é enviado como `DBNull.Value` com o
+tipo de array declarado; arrays vazios permanecem arrays vazios. Isso não é um
+equivalente de TVP do SQL Server.
+
+## Diferenças Entre Providers
+
+| Capacidade | Provider SQL Server | Provider PostgreSQL |
+| --- | --- | --- |
+| Provider ADO.NET | `Microsoft.Data.SqlClient` | `Npgsql` |
+| Metadado de tipo | `SqlDbType` | `NpgsqlDbType` |
+| Parâmetros de entrada | Sim | Sim |
+| Helpers output/input-output | Sim | Não nesta versão |
+| Parâmetros estruturados em lote | TVPs SQL Server via `DataTable` | Sem TVP artificial; use padrões nativos PostgreSQL fora deste pacote |
+| Arrays | Arrays binários como valores escalares | Arrays nativos PostgreSQL com tipo de elemento explícito |
+| JSON | Não modelado pelo pacote SQL Server | `json` e `jsonb` |
+| Semântica temporal | Tipos temporais SQL Server | Regras PostgreSQL de `timestamp`/`timestamptz` |
+
+## Fora de Escopo PostgreSQL
+
+O pacote PostgreSQL não oferece suporte a estes recursos nesta versão:
+
+- PostgreSQL enums;
+- composites;
+- APIs UDT genéricas com `DataTypeName`;
+- ranges;
+- multiranges;
+- PostGIS;
+- network types;
+- `hstore`;
+- full-text-search types;
+- tipos específicos de extensões;
+- NodaTime;
+- serialização automática de POCO para JSON;
+- `COPY` ou APIs bulk;
+- inspeção de schema;
+- reescrita de positional placeholders;
+- paridade com output parameters estilo SQL Server.
 
 ## Compatibilidade
 
@@ -176,19 +235,17 @@ Suporte preview inicial para PostgreSQL:
 | System.Data.SqlClient | Não suportado pelo provider SQL Server |
 | Compatibilidade declarada do driver SQL Server | SQL Server 2016 até SQL Server 2025 |
 | SQL Server testado na CI | `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04` |
+| PostgreSQL testado na CI | `postgres:17.6-bookworm` |
 | Azure SQL Database | Compatível pelo driver; não testado por integração neste repositório |
 | Azure SQL Managed Instance | Compatível pelo driver; não testado por integração neste repositório |
 | Azure Synapse Analytics | Compatível pelo driver; não testado por integração neste repositório |
 
-As entradas de SQL Server e Azure SQL descrevem compatibilidade do driver
-`Microsoft.Data.SqlClient`. Este repositório atualmente executa testes de
-integração apenas na imagem SQL Server 2022 listada acima.
-
 ## Documentação
 
-- [Primeiros passos](docs/getting-started.pt-BR.md)
+- [Primeiros passos com SQL Server](docs/getting-started.pt-BR.md)
+- [Guia do provider PostgreSQL](docs/postgresql.pt-BR.md)
 - [Motivação](docs/motivation.pt-BR.md)
-- Exemplos:
+- Exemplos SQL Server:
   - [Strings](docs/examples/strings.pt-BR.md)
   - [Numéricos](docs/examples/numeric.pt-BR.md)
   - [Binários e identificadores](docs/examples/binary.pt-BR.md)
@@ -214,10 +271,12 @@ A biblioteca não:
 - consulta o banco para obter metadados;
 - reescreve SQL;
 - analisa planos de execução;
-- detecta `CONVERT_IMPLICIT`;
+- detecta conversões implícitas;
 - escolhe tipos SQL automaticamente;
-- mapeia POCOs para table-valued parameters;
+- mapeia POCOs para table-valued parameters SQL Server;
 - cria user-defined table types no SQL Server;
+- serializa POCOs para JSON PostgreSQL;
+- emula TVPs SQL Server em PostgreSQL;
 - oferece suporte a `System.Data.SqlClient`.
 
 ## Testes e Qualidade
@@ -234,22 +293,19 @@ dotnet restore Dapper.TypedParameters.sln
 dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
 dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
+dotnet pack src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
-Os testes de integração SQL Server usam Docker e `Testcontainers.MsSql`. O
-projeto de integração PostgreSQL está presente para comportamentos do provider
-que precisem de banco real em fases posteriores.
+Os testes de integração SQL Server usam Docker e `Testcontainers.MsSql`.
+Os testes de integração PostgreSQL usam Docker e `Testcontainers.PostgreSql`.
 
 ## Registros de Release
 
-O workflow protegido de release publica o mesmo `.nupkg` validado no
-NuGet.org, fonte pública principal de instalação, e no GitHub Packages, registro
-secundário vinculado ao repositório. Uma simulação com `publish=false` nunca
-publica; `publish=true` exige a tag correspondente à versão e a aprovação do
-environment `nuget-release`. O NuGet.org usa Trusted Publishing, enquanto o
-GitHub Packages usa o `GITHUB_TOKEN` efêmero do workflow. Após a primeira
-publicação, o pacote no GitHub deve ser tornado público explicitamente antes de
-ser consumido sem autenticação.
+O workflow protegido de release aceita uma versão SemVer `version` sem prefixo
+`v`. Ele valida, empacota e publica `TypedParameters.Dapper.SqlServer` e
+`TypedParameters.Dapper.PostgreSql` como pacotes NuGet separados. O NuGet.org
+usa Trusted Publishing pelo environment `nuget-release`; GitHub Packages usa o
+`GITHUB_TOKEN` efêmero do workflow.
 
 ## Contribuindo
 
@@ -263,4 +319,4 @@ Este projeto é licenciado sob a licença MIT.
 ## Aviso
 
 Este projeto não é afiliado, mantido ou endossado oficialmente pelo projeto
-Dapper ou pela Microsoft.
+Dapper, pela Microsoft, pelo PostgreSQL ou pelo projeto Npgsql.

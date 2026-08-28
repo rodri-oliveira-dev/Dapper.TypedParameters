@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Introduces the new `TypedParameters.Dapper.PostgreSql` provider package.
+- Adds explicit PostgreSQL parameter metadata through `NpgsqlDbType` and
+  `Npgsql`.
+- Supports PostgreSQL scalar factories for text, boolean/numeric,
+  identifier/binary, JSON, temporal, and native array parameters.
+- Keeps `json` and `jsonb` as distinct textual JSON factories.
+- Documents and tests PostgreSQL `timestamp`/`timestamptz` `DateTimeKind`
+  semantics.
+- Supports native PostgreSQL arrays with explicit element types, including
+  integration coverage for `integer[]`, `uuid[]`, and `text[]`.
+- Adds PostgreSQL Testcontainers integration tests.
+- Updates CI, Sonar coverage verification, package content validation, package
+  consumption validation, and release packaging for both provider packages.
 - Adds SonarQube Cloud analysis to CI.
 - Imports OpenCover coverage reports for SonarQube Cloud.
 - Enforces the pull request Quality Gate through the SonarQube Cloud job.
