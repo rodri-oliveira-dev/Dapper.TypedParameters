@@ -331,7 +331,7 @@ jobs:
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
   pack:
-    name: Pack NuGet artifacts
+    name: Pack NuGet artifact
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: validate
