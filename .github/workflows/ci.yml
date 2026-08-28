@@ -21,15 +21,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Dependency review
-        uses: actions/dependency-review-action@v5
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
 
   validate:
     name: Validate ${{ matrix.framework }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     strategy:
       fail-fast: false
@@ -40,10 +40,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: |
             8.0.x
@@ -55,7 +55,7 @@ jobs:
       - name: Build
         run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore
 
-      - name: Test unit
+      - name: Test SQL Server unit
         run: >
           dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
           --framework ${{ matrix.framework }}
@@ -63,13 +63,30 @@ jobs:
           --no-build
           --verbosity normal
           --collect:"XPlat Code Coverage"
-          --results-directory artifacts/coverage/unit/${{ matrix.framework }}
+          --results-directory artifacts/coverage/unit/sqlserver/${{ matrix.framework }}
 
-      - name: Upload unit coverage
-        uses: actions/upload-artifact@v4
+      - name: Upload SQL Server unit coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: coverage-unit-${{ matrix.framework }}
-          path: artifacts/coverage/unit/${{ matrix.framework }}/**/coverage.cobertura.xml
+          name: coverage-sqlserver-unit-${{ matrix.framework }}
+          path: artifacts/coverage/unit/sqlserver/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
+
+      - name: Test PostgreSQL unit
+        run: >
+          dotnet test tests/Dapper.TypedParameters.PostgreSql.Tests/Dapper.TypedParameters.PostgreSql.Tests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/unit/postgresql/${{ matrix.framework }}
+
+      - name: Upload PostgreSQL unit coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-postgresql-unit-${{ matrix.framework }}
+          path: artifacts/coverage/unit/postgresql/${{ matrix.framework }}/**/coverage.cobertura.xml
           if-no-files-found: error
 
       - name: Docker diagnostics
@@ -77,7 +94,7 @@ jobs:
           docker version
           docker info
 
-      - name: Test integration
+      - name: Test SQL Server integration
         env:
           ACCEPT_EULA: "Y"
         run: >
@@ -87,19 +104,36 @@ jobs:
           --no-build
           --verbosity normal
           --collect:"XPlat Code Coverage"
-          --results-directory artifacts/coverage/integration/${{ matrix.framework }}
+          --results-directory artifacts/coverage/integration/sqlserver/${{ matrix.framework }}
 
-      - name: Upload integration coverage
-        uses: actions/upload-artifact@v4
+      - name: Upload SQL Server integration coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: coverage-integration-${{ matrix.framework }}
-          path: artifacts/coverage/integration/${{ matrix.framework }}/**/coverage.cobertura.xml
+          name: coverage-sqlserver-integration-${{ matrix.framework }}
+          path: artifacts/coverage/integration/sqlserver/${{ matrix.framework }}/**/coverage.cobertura.xml
+          if-no-files-found: error
+
+      - name: Test PostgreSQL integration
+        run: >
+          dotnet test tests/Dapper.TypedParameters.PostgreSql.IntegrationTests/Dapper.TypedParameters.PostgreSql.IntegrationTests.csproj
+          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory artifacts/coverage/integration/postgresql/${{ matrix.framework }}
+
+      - name: Upload PostgreSQL integration coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-postgresql-integration-${{ matrix.framework }}
+          path: artifacts/coverage/integration/postgresql/${{ matrix.framework }}/**/coverage.cobertura.xml
           if-no-files-found: error
 
   sonar:
     name: SonarQube Cloud
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     needs: validate
     if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
 
@@ -115,19 +149,19 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: |
             8.0.x
             10.0.302
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: "21"
@@ -147,7 +181,7 @@ jobs:
           /k:"rodri-oliveira-dev_Dapper.TypedParameters"
           /o:"rodri-oliveira-dev"
           /d:sonar.token="${SONAR_TOKEN}"
-          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/sonar/opencover/unit.opencover.xml,artifacts/coverage/sonar/opencover/integration.opencover.xml"
+          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/sonar/opencover/sqlserver-unit.opencover.xml,artifacts/coverage/sonar/opencover/postgresql-unit.opencover.xml,artifacts/coverage/sonar/opencover/sqlserver-integration.opencover.xml,artifacts/coverage/sonar/opencover/postgresql-integration.opencover.xml"
           /d:sonar.qualitygate.wait=true
           /d:sonar.qualitygate.timeout=300
 
@@ -160,7 +194,7 @@ jobs:
           --no-incremental
           --disable-build-servers
 
-      - name: Test unit with OpenCover
+      - name: Test SQL Server unit with OpenCover
         run: >
           dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
           --framework net8.0
@@ -169,14 +203,25 @@ jobs:
           --verbosity normal
           --collect:"XPlat Code Coverage"
           --settings tests/sonar.runsettings
-          --results-directory artifacts/coverage/sonar/unit
+          --results-directory artifacts/coverage/sonar/unit/sqlserver
+
+      - name: Test PostgreSQL unit with OpenCover
+        run: >
+          dotnet test tests/Dapper.TypedParameters.PostgreSql.Tests/Dapper.TypedParameters.PostgreSql.Tests.csproj
+          --framework net8.0
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --settings tests/sonar.runsettings
+          --results-directory artifacts/coverage/sonar/unit/postgresql
 
       - name: Docker diagnostics
         run: |
           docker version
           docker info
 
-      - name: Test integration with OpenCover
+      - name: Test SQL Server integration with OpenCover
         env:
           ACCEPT_EULA: "Y"
         run: >
@@ -187,7 +232,18 @@ jobs:
           --verbosity normal
           --collect:"XPlat Code Coverage"
           --settings tests/sonar.runsettings
-          --results-directory artifacts/coverage/sonar/integration
+          --results-directory artifacts/coverage/sonar/integration/sqlserver
+
+      - name: Test PostgreSQL integration with OpenCover
+        run: >
+          dotnet test tests/Dapper.TypedParameters.PostgreSql.IntegrationTests/Dapper.TypedParameters.PostgreSql.IntegrationTests.csproj
+          --framework net8.0
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --settings tests/sonar.runsettings
+          --results-directory artifacts/coverage/sonar/integration/postgresql
 
       - name: Verify OpenCover coverage
         shell: pwsh
@@ -198,12 +254,20 @@ jobs:
 
           $reports = @(
             @{
-              Name = "unit"
-              Path = "artifacts/coverage/sonar/unit"
+              Name = "sqlserver-unit"
+              Path = "artifacts/coverage/sonar/unit/sqlserver"
             },
             @{
-              Name = "integration"
-              Path = "artifacts/coverage/sonar/integration"
+              Name = "postgresql-unit"
+              Path = "artifacts/coverage/sonar/unit/postgresql"
+            },
+            @{
+              Name = "sqlserver-integration"
+              Path = "artifacts/coverage/sonar/integration/sqlserver"
+            },
+            @{
+              Name = "postgresql-integration"
+              Path = "artifacts/coverage/sonar/integration/postgresql"
             }
           )
 
@@ -218,33 +282,44 @@ jobs:
           }
 
           $normalized = @(Get-ChildItem -LiteralPath $output -File -Filter "*.opencover.xml")
-          if ($normalized.Count -ne 2) {
-            throw "Expected two normalized OpenCover reports, found $($normalized.Count)."
+          if ($normalized.Count -ne 4) {
+            throw "Expected four normalized OpenCover reports, found $($normalized.Count)."
           }
 
-          $productionAssemblyFound = $false
-          $productionSourceFound = $false
+          $providers = @(
+            @{
+              Assembly = "Dapper.TypedParameters.SqlServer"
+              Source = "src/Dapper.TypedParameters.SqlServer"
+            },
+            @{
+              Assembly = "Dapper.TypedParameters.PostgreSql"
+              Source = "src/Dapper.TypedParameters.PostgreSql"
+            }
+          )
 
+          $moduleNames = @()
+          $sourceFiles = @()
           foreach ($file in $normalized) {
             [xml] $coverage = Get-Content -Raw -LiteralPath $file.FullName
-            $moduleNames = @($coverage.CoverageSession.Modules.Module | ForEach-Object { $_.ModuleName })
-            $sourceFiles = @($coverage.CoverageSession.Modules.Module.Files.File | ForEach-Object { $_.fullPath })
-
-            $productionAssemblyFound = $productionAssemblyFound -or
-              ($moduleNames -contains "Dapper.TypedParameters.SqlServer")
-            $productionSourceFound = $productionSourceFound -or
-              (@($sourceFiles | Where-Object {
-                $_ -like "*src/Dapper.TypedParameters.SqlServer*" -or
-                $_ -like "*src\Dapper.TypedParameters.SqlServer*"
-              }).Count -gt 0)
+            $moduleNames += @($coverage.CoverageSession.Modules.Module | ForEach-Object { $_.ModuleName })
+            $sourceFiles += @($coverage.CoverageSession.Modules.Module.Files.File | ForEach-Object { $_.fullPath })
           }
 
-          if (-not $productionAssemblyFound) {
-            throw "OpenCover report does not contain production assembly Dapper.TypedParameters.SqlServer."
-          }
+          foreach ($provider in $providers) {
+            if ($moduleNames -notcontains $provider.Assembly) {
+              throw "OpenCover reports do not contain production assembly $($provider.Assembly)."
+            }
 
-          if (-not $productionSourceFound) {
-            throw "OpenCover report does not contain production source files."
+            $slashSource = $provider.Source
+            $backslashSource = $provider.Source.Replace("/", "\")
+            $providerSourceFound = @($sourceFiles | Where-Object {
+              $_ -like "*$slashSource*" -or
+              $_ -like "*$backslashSource*"
+            }).Count -gt 0
+
+            if (-not $providerSourceFound) {
+              throw "OpenCover reports do not contain production source files for $($provider.Assembly)."
+            }
           }
 
       - name: End Sonar analysis
@@ -254,17 +329,17 @@ jobs:
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
   pack:
-    name: Pack NuGet artifact
+    name: Pack NuGet artifacts
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     needs: validate
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: |
             8.0.x
@@ -273,27 +348,104 @@ jobs:
       - name: Restore
         run: dotnet restore Dapper.TypedParameters.sln
 
-      - name: Pack
-        run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-restore --output artifacts/packages
+      - name: Build
+        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
 
-      - name: Validate package contents
+      - name: Pack TypedParameters.Dapper.SqlServer
+        run: dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
+
+      - name: Pack TypedParameters.Dapper.PostgreSql
+        run: dotnet pack src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj --configuration Release --no-build --output artifacts/packages
+
+      - name: Validate SQL Server package compatibility
+        run: >
+          dotnet msbuild src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
+          -target:RunPackageValidation
+          -property:Configuration=Release
+          -property:NoBuild=true
+
+      - name: Validate PostgreSQL package compatibility
+        run: >
+          dotnet msbuild src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj
+          -target:RunPackageValidation
+          -property:Configuration=Release
+          -property:NoBuild=true
+
+      - name: Validate expected package artifacts
         shell: pwsh
-        run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
+        run: |
+          $ErrorActionPreference = "Stop"
+          $expectedPackageIds = @(
+            "TypedParameters.Dapper.SqlServer",
+            "TypedParameters.Dapper.PostgreSql"
+          )
 
-      - name: Validate package consumption
+          foreach ($packageId in $expectedPackageIds) {
+            $nupkg = @(Get-ChildItem -LiteralPath artifacts/packages -File -Filter "$packageId.*.nupkg")
+            $snupkg = @(Get-ChildItem -LiteralPath artifacts/packages -File -Filter "$packageId.*.snupkg")
+
+            if ($nupkg.Count -ne 1) {
+              $found = if ($nupkg.Count -eq 0) { "<none>" } else { $nupkg.Name -join ", " }
+              throw "Expected exactly one $packageId .nupkg, found $($nupkg.Count): $found"
+            }
+
+            if ($snupkg.Count -ne 1) {
+              $found = if ($snupkg.Count -eq 0) { "<none>" } else { $snupkg.Name -join ", " }
+              throw "Expected exactly one $packageId .snupkg, found $($snupkg.Count): $found"
+            }
+          }
+
+          $allArtifacts = @(
+            Get-ChildItem -LiteralPath artifacts/packages -File -Filter *.nupkg
+            Get-ChildItem -LiteralPath artifacts/packages -File -Filter *.snupkg
+          )
+          if ($allArtifacts.Count -ne 4) {
+            $names = $allArtifacts.Name -join ', '
+            throw "Expected two .nupkg and two .snupkg artifacts, found $($allArtifacts.Count): $names"
+          }
+
+      - name: Validate TypedParameters.Dapper.SqlServer package contents
         shell: pwsh
-        run: ./scripts/Test-PackageConsumption.ps1 -PackageDirectory artifacts/packages
+        run: >
+          ./scripts/Test-PackageContents.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.SqlServer
+          -AssemblyName Dapper.TypedParameters.SqlServer
 
-      - name: Upload package
-        uses: actions/upload-artifact@v4
+      - name: Validate TypedParameters.Dapper.PostgreSql package contents
+        shell: pwsh
+        run: >
+          ./scripts/Test-PackageContents.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.PostgreSql
+          -AssemblyName Dapper.TypedParameters.PostgreSql
+
+      - name: Validate TypedParameters.Dapper.SqlServer package consumption
+        shell: pwsh
+        run: >
+          ./scripts/Test-PackageConsumption.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.SqlServer
+          -AssemblyName Dapper.TypedParameters.SqlServer
+
+      - name: Validate TypedParameters.Dapper.PostgreSql package consumption
+        shell: pwsh
+        run: >
+          ./scripts/Test-PackageConsumption.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.PostgreSql
+          -AssemblyName Dapper.TypedParameters.PostgreSql
+
+      - name: Upload NuGet packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: nuget-package
+          name: nuget-packages
           path: artifacts/packages/*.nupkg
           if-no-files-found: error
 
-      - name: Upload symbol package
-        uses: actions/upload-artifact@v4
+      - name: Upload symbol packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: nuget-symbol-package
+          name: nuget-symbol-packages
           path: artifacts/packages/*.snupkg
           if-no-files-found: error

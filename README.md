@@ -262,6 +262,7 @@ dotnet restore Dapper.TypedParameters.sln
 dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
 dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
+dotnet pack src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
 SQL Server integration tests use Docker and `Testcontainers.MsSql`.
@@ -269,14 +270,14 @@ PostgreSQL integration tests use Docker and `Testcontainers.PostgreSql`.
 
 ## Release Registries
 
-The protected release workflow publishes the same validated `.nupkg` to
-NuGet.org, the primary public installation source, and GitHub Packages, the
-repository-linked secondary registry. A rehearsal with `publish=false` never
-publishes; `publish=true` requires the matching version tag and approval of the
-`nuget-release` environment. NuGet.org uses Trusted Publishing, while GitHub
-Packages uses the ephemeral workflow `GITHUB_TOKEN`. After its first
-publication, the GitHub package must be made public explicitly before it can be
-consumed anonymously.
+The protected release workflow accepts a SemVer `version` without a `v` prefix,
+validates both provider packages, creates or verifies the matching `v<version>`
+tag only after package validation, publishes the validated `.nupkg` files to
+NuGet.org and GitHub Packages in separate jobs, then creates or refreshes the
+GitHub Release with `.nupkg` and `.snupkg` artifacts. NuGet.org uses Trusted
+Publishing through the `nuget-release` environment, while GitHub Packages uses
+the ephemeral workflow `GITHUB_TOKEN`. After its first publication, each GitHub
+package must be made public explicitly before it can be consumed anonymously.
 
 ## Contributing
 

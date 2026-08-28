@@ -7,10 +7,14 @@ param(
 
     [string] $AssemblyName = "Dapper.TypedParameters.SqlServer",
 
+    [string] $ExpectedVersion,
+
     [string] $RepositoryUrl = "https://github.com/rodri-oliveira-dev/Dapper.TypedParameters"
 )
 
 $ErrorActionPreference = "Stop"
+
+. (Join-Path $PSScriptRoot "PackageConsumption.Common.ps1")
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -48,7 +52,11 @@ function Assert-EntryExists {
 }
 
 function Test-NoForbiddenEntries {
-    param([string[]] $Entries)
+    param(
+        [string[]] $Entries,
+
+        [string[]] $ForbiddenAssemblyNames
+    )
 
     $forbidden = @(
         '(^|/)bin/',
@@ -58,8 +66,16 @@ function Test-NoForbiddenEntries {
         '\.user$',
         '\.suo$',
         'Dapper\.TypedParameters\.SqlServer\.Tests\.dll$',
-        'Dapper\.TypedParameters\.SqlServer\.IntegrationTests\.dll$'
+        'Dapper\.TypedParameters\.SqlServer\.IntegrationTests\.dll$',
+        'Dapper\.TypedParameters\.PostgreSql\.Tests\.dll$',
+        'Dapper\.TypedParameters\.PostgreSql\.IntegrationTests\.dll$'
     )
+
+    foreach ($assemblyName in $ForbiddenAssemblyNames) {
+        $escapedAssemblyName = [regex]::Escape($assemblyName)
+        $forbidden += "(^|/)$escapedAssemblyName\.(dll|xml|pdb)$"
+        $forbidden += "(^|/)lib/.+/$escapedAssemblyName\.(dll|xml|pdb)$"
+    }
 
     foreach ($entry in $Entries) {
         foreach ($pattern in $forbidden) {
@@ -111,17 +127,58 @@ function Test-SourceLinkMetadata {
     }
 }
 
-$packagePath = Get-ChildItem -LiteralPath $PackageDirectory -Filter "$PackageId*.nupkg" |
-    Where-Object { $_.Name -notlike '*.symbols.nupkg' } |
-    Select-Object -First 1
-$symbolPath = Get-ChildItem -LiteralPath $PackageDirectory -Filter "$PackageId*.snupkg" |
-    Select-Object -First 1
+function Get-ExactArtifact {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Directory,
 
-Assert-True ($null -ne $packagePath) "No .nupkg found in $PackageDirectory."
-Assert-True ($null -ne $symbolPath) "No .snupkg found in $PackageDirectory."
+        [Parameter(Mandatory = $true)]
+        [string] $Id,
 
-$packageRoot = Expand-Package $packagePath.FullName
-$symbolRoot = Expand-Package $symbolPath.FullName
+        [Parameter(Mandatory = $true)]
+        [string] $Extension
+    )
+
+    $escapedPackageId = [regex]::Escape($Id)
+    $escapedExtension = [regex]::Escape($Extension)
+    $artifactPattern = "^$escapedPackageId\.(?<Version>.+)$escapedExtension$"
+    $artifacts = @(Get-ChildItem -LiteralPath $Directory -File -Filter "*$Extension" |
+        Where-Object { $_.Name -match $artifactPattern })
+
+    if ($artifacts.Count -ne 1) {
+        $found = if ($artifacts.Count -eq 0) {
+            "<none>"
+        }
+        else {
+            $artifacts.Name -join ", "
+        }
+
+        throw "Expected exactly one $Id $Extension in '$Directory', found $($artifacts.Count): $found"
+    }
+
+    $version = [regex]::Match($artifacts[0].Name, $artifactPattern).Groups["Version"].Value
+
+    return [pscustomobject]@{
+        Path = $artifacts[0].FullName
+        Name = $artifacts[0].Name
+        Version = $version
+    }
+}
+
+$packageProfile = Get-PackageProfile -PackageId $PackageId -AssemblyName $AssemblyName
+$packagePath = Get-ExactArtifact -Directory $PackageDirectory -Id $PackageId -Extension ".nupkg"
+$symbolPath = Get-ExactArtifact -Directory $PackageDirectory -Id $PackageId -Extension ".snupkg"
+
+Assert-True ($packagePath.Version -eq $symbolPath.Version) `
+    "Package and symbol package versions differ. Package='$($packagePath.Version)', symbols='$($symbolPath.Version)'."
+
+if (-not [string]::IsNullOrWhiteSpace($ExpectedVersion)) {
+    Assert-True ($packagePath.Version -eq $ExpectedVersion) `
+        "Unexpected package version '$($packagePath.Version)'. Expected '$ExpectedVersion'."
+}
+
+$packageRoot = Expand-Package $packagePath.Path
+$symbolRoot = Expand-Package $symbolPath.Path
 
 try {
     $entries = Get-ChildItem -Recurse -File -LiteralPath $packageRoot |
@@ -136,8 +193,8 @@ try {
     }
 
     Assert-EntryExists $entries "README.md"
-    Test-NoForbiddenEntries $entries
-    Test-NoForbiddenEntries $symbolEntries
+    Test-NoForbiddenEntries $entries $packageProfile.ForbiddenAssemblyNames
+    Test-NoForbiddenEntries $symbolEntries $packageProfile.ForbiddenAssemblyNames
     Test-NoObviousSecrets $packageRoot $entries
     Test-NoObviousSecrets $symbolRoot $symbolEntries
 
@@ -151,11 +208,21 @@ try {
     Assert-True ($metadata.license.type -eq 'expression') "License expression metadata was not found."
     Assert-True ($metadata.license.'#text' -eq 'MIT') "MIT license expression was not found."
     Assert-True ($metadata.readme -eq 'README.md') "README metadata was not found."
+    if (-not [string]::IsNullOrWhiteSpace($metadata.icon)) {
+        Assert-EntryExists $entries $metadata.icon
+    }
     Assert-True ($metadata.repository.url -eq $RepositoryUrl) "Repository URL metadata was not found."
 
     $dependencyIds = @($metadata.dependencies.group.dependency | ForEach-Object { $_.id })
-    Assert-True ($dependencyIds -contains 'Dapper') "Dapper dependency metadata was not found."
-    Assert-True ($dependencyIds -contains 'Microsoft.Data.SqlClient') "Microsoft.Data.SqlClient dependency metadata was not found."
+    foreach ($dependencyId in $packageProfile.ExpectedDependencies) {
+        Assert-True ($dependencyIds -contains $dependencyId) `
+            "$dependencyId dependency metadata was not found."
+    }
+
+    foreach ($dependencyId in $packageProfile.ForbiddenDependencies) {
+        Assert-True ($dependencyIds -notcontains $dependencyId) `
+            "Forbidden dependency metadata was found: $dependencyId."
+    }
 
     Test-SourceLinkMetadata $symbolRoot $symbolEntries $RepositoryUrl
 
