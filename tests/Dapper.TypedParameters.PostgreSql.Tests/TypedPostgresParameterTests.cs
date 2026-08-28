@@ -67,6 +67,49 @@ public sealed class TypedPostgresParameterTests
     }
 
     [Fact]
+    public void AddParameter_materializes_array_parameter()
+    {
+        int[] value = [1, 2, 3];
+        var typedParameter = PostgresParam.Array(value, NpgsqlDbType.Integer);
+        using var command = new NpgsqlCommand();
+
+        typedParameter.AddParameter(command, "Ids");
+
+        var parameter = Assert.Single(command.Parameters.Cast<NpgsqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Integer, parameter.NpgsqlDbType);
+        Assert.Equal(ParameterDirection.Input, parameter.Direction);
+    }
+
+    [Fact]
+    public void AddParameter_materializes_empty_array_parameter()
+    {
+        string[] value = [];
+        var typedParameter = PostgresParam.Array(value, NpgsqlDbType.Text);
+        using var command = new NpgsqlCommand();
+
+        typedParameter.AddParameter(command, "Names");
+
+        var parameter = Assert.Single(command.Parameters.Cast<NpgsqlParameter>());
+        Assert.Same(value, parameter.Value);
+        Assert.Empty(Assert.IsAssignableFrom<IList<string>>(parameter.Value));
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Text, parameter.NpgsqlDbType);
+    }
+
+    [Fact]
+    public void AddParameter_materializes_null_array_parameter_with_explicit_array_type()
+    {
+        var typedParameter = PostgresParam.Array<Guid>(null, NpgsqlDbType.Uuid);
+        using var command = new NpgsqlCommand();
+
+        typedParameter.AddParameter(command, "Ids");
+
+        var parameter = Assert.Single(command.Parameters.Cast<NpgsqlParameter>());
+        Assert.Equal(DBNull.Value, parameter.Value);
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Uuid, parameter.NpgsqlDbType);
+    }
+
+    [Fact]
     public void AddParameter_reuses_existing_parameter()
     {
         var typedParameter = PostgresParam.Text("active");

@@ -4,6 +4,7 @@ Dapper.TypedParameters.PostgreSql.TypedPostgresParameter
 Dapper.TypedParameters.PostgreSql.TypedPostgresParameter.AddParameter(System.Data.IDbCommand! command, string! name) -> void
 Dapper.TypedParameters.PostgreSql.TypedPostgresParameter.NpgsqlDbType.get -> NpgsqlTypes.NpgsqlDbType
 Dapper.TypedParameters.PostgreSql.TypedPostgresParameter.Value.get -> object?
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Array<T>(System.Collections.Generic.IList<T>? value, NpgsqlTypes.NpgsqlDbType elementType) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
 static Dapper.TypedParameters.PostgreSql.PostgresParam.BigInt(long? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
 static Dapper.TypedParameters.PostgreSql.PostgresParam.Boolean(bool? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
 static Dapper.TypedParameters.PostgreSql.PostgresParam.Bytea(byte[]? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!

@@ -11,9 +11,92 @@ public sealed class PostgreSqlTypeContractIntegrationTests
 {
     private readonly PostgreSqlContainerFixture fixture;
 
+    public static TheoryData<string, string, string> ScalarTextRoundTripCases =>
+        new()
+        {
+            { "Text", "text", "typed" },
+            { "VarChar", "character varying", "typed" },
+            { "Char", "character", "typed" },
+            { "Boolean", "boolean", "true" },
+            { "SmallInt", "smallint", "-123" },
+            { "Integer", "integer", "42" },
+            { "BigInt", "bigint", "1234567890123" },
+            { "Real", "real", "12.5" },
+            { "Double", "double precision", "12.5" },
+            { "Numeric", "numeric", "12345.6789" },
+            { "Uuid", "uuid", "f0da086a-cf8d-4682-8a55-e96017890d2b" },
+        };
+
     public PostgreSqlTypeContractIntegrationTests(PostgreSqlContainerFixture fixture)
     {
         this.fixture = fixture;
+    }
+
+    [Theory]
+    [MemberData(nameof(ScalarTextRoundTripCases))]
+    public async Task Scalar_factories_round_trip_values_and_send_declared_backend_type(
+        string factoryName,
+        string expectedType,
+        string expectedText)
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        TextProbe result = await connection.QuerySingleAsync<TextProbe>(
+            TextProbeSql,
+            new
+            {
+                Value = CreateScalarParameter(factoryName)
+            });
+
+        Assert.Equal(expectedType, result.TypeName);
+        Assert.Equal(expectedText, result.TextValue);
+    }
+
+    [Fact]
+    public async Task Money_factory_round_trips_decimal_value_and_sends_money_backend_type()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        NumericProbe result = await connection.QuerySingleAsync<NumericProbe>(
+            """
+            SELECT
+                pg_typeof(@Value)::text AS TypeName,
+                @Value::numeric AS Value,
+                @Value::numeric::text AS TextValue;
+            """,
+            new
+            {
+                Value = PostgresParam.Money(12.34M)
+            });
+
+        Assert.Equal("money", result.TypeName);
+        Assert.Equal(12.34M, result.Value);
+        Assert.Equal("12.34", result.TextValue);
+    }
+
+    [Fact]
+    public async Task Bytea_factory_round_trips_binary_value_and_sends_bytea_backend_type()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        BinaryProbe result = await connection.QuerySingleAsync<BinaryProbe>(
+            """
+            SELECT
+                pg_typeof(@Value)::text AS TypeName,
+                @Value AS Value,
+                encode(@Value, 'hex') AS HexValue;
+            """,
+            new
+            {
+                Value = PostgresParam.Bytea([0x01, 0x02, 0xFE])
+            });
+
+        Assert.Equal("bytea", result.TypeName);
+        Assert.Equal([0x01, 0x02, 0xFE], result.Value);
+        Assert.Equal("0102fe", result.HexValue);
     }
 
     [Theory]
@@ -140,6 +223,7 @@ public sealed class PostgreSqlTypeContractIntegrationTests
     }
 
     [Theory]
+    [InlineData("Text", "text", "typed")]
     [InlineData("VarChar", "character varying", "typed")]
     [InlineData("Char", "character", "typed")]
     [InlineData("Json", "json", "{\"name\":\"typed\"}")]
@@ -313,6 +397,30 @@ public sealed class PostgreSqlTypeContractIntegrationTests
     }
 
     [Fact]
+    public async Task Timestamp_accepts_local_wall_clock_value()
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+        DateTime wallClock = new(2026, 8, 28, 13, 45, 12, DateTimeKind.Local);
+
+        string value = await connection.QuerySingleAsync<string>(
+            "SELECT @Value::text;",
+            new
+            {
+                Value = PostgresParam.Timestamp(wallClock)
+            });
+
+        Assert.Equal("2026-08-28 13:45:12", value);
+    }
+
+    [Fact]
+    public void Timestamp_rejects_utc_datetime()
+    {
+        Assert.Throws<ArgumentException>(
+            () => PostgresParam.Timestamp(new DateTime(2026, 8, 28, 13, 45, 12, DateTimeKind.Utc)));
+    }
+
+    [Fact]
     public async Task TimestampTz_round_trips_utc_instant()
     {
         await using var connection = fixture.CreateConnection();
@@ -328,6 +436,16 @@ public sealed class PostgreSqlTypeContractIntegrationTests
 
         Assert.Equal(instant, value);
         Assert.Equal(DateTimeKind.Utc, value.Kind);
+    }
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void TimestampTz_rejects_non_utc_datetime(DateTimeKind kind)
+    {
+        DateTime value = new(2026, 8, 28, 13, 45, 12, kind);
+
+        Assert.Throws<ArgumentException>(() => PostgresParam.TimestampTz(value));
     }
 
     [Fact]
@@ -370,6 +488,97 @@ public sealed class PostgreSqlTypeContractIntegrationTests
         Assert.True(result.IsNull);
     }
 
+    [Theory]
+    [InlineData("single")]
+    [InlineData("multiple")]
+    [InlineData("empty")]
+    public async Task Integer_array_round_trips_values_and_sends_integer_array_backend_type(
+        string scenario)
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+        int[] value = CreateIntegerArray(scenario);
+
+        ArrayProbe<int> result = await connection.QuerySingleAsync<ArrayProbe<int>>(
+            ArrayProbeSql,
+            new
+            {
+                Value = PostgresParam.Array(value, NpgsqlDbType.Integer)
+            });
+
+        Assert.Equal("integer[]", result.TypeName);
+        Assert.Equal(value, result.Value);
+        Assert.Equal(value.Length, result.Cardinality);
+    }
+
+    [Theory]
+    [InlineData("single")]
+    [InlineData("multiple")]
+    [InlineData("empty")]
+    public async Task Uuid_array_round_trips_values_and_sends_uuid_array_backend_type(
+        string scenario)
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+        Guid[] value = CreateUuidArray(scenario);
+
+        ArrayProbe<Guid> result = await connection.QuerySingleAsync<ArrayProbe<Guid>>(
+            ArrayProbeSql,
+            new
+            {
+                Value = PostgresParam.Array(value, NpgsqlDbType.Uuid)
+            });
+
+        Assert.Equal("uuid[]", result.TypeName);
+        Assert.Equal(value, result.Value);
+        Assert.Equal(value.Length, result.Cardinality);
+    }
+
+    [Theory]
+    [InlineData("single")]
+    [InlineData("multiple")]
+    [InlineData("empty")]
+    public async Task Text_array_round_trips_list_values_and_sends_text_array_backend_type(
+        string scenario)
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+        List<string> value = CreateTextList(scenario);
+
+        ArrayProbe<string> result = await connection.QuerySingleAsync<ArrayProbe<string>>(
+            ArrayProbeSql,
+            new
+            {
+                Value = PostgresParam.Array(value, NpgsqlDbType.Text)
+            });
+
+        Assert.Equal("text[]", result.TypeName);
+        Assert.Equal(value, result.Value);
+        Assert.Equal(value.Count, result.Cardinality);
+    }
+
+    [Theory]
+    [InlineData("Integer", "integer[]")]
+    [InlineData("Uuid", "uuid[]")]
+    [InlineData("Text", "text[]")]
+    public async Task Array_factories_send_null_with_declared_backend_type(
+        string factoryName,
+        string expectedType)
+    {
+        await using var connection = fixture.CreateConnection();
+        await connection.OpenAsync();
+
+        NullProbe result = await connection.QuerySingleAsync<NullProbe>(
+            NullProbeSql,
+            new
+            {
+                Value = CreateNullArrayParameter(factoryName)
+            });
+
+        Assert.Equal(expectedType, result.TypeName);
+        Assert.True(result.IsNull);
+    }
+
     private const string TextProbeSql =
         """
         SELECT
@@ -385,9 +594,35 @@ public sealed class PostgreSqlTypeContractIntegrationTests
             @Value IS NULL AS IsNull;
         """;
 
+    private const string ArrayProbeSql =
+        """
+        SELECT
+            pg_typeof(@Value)::text AS TypeName,
+            @Value AS Value,
+            cardinality(@Value) AS Cardinality;
+        """;
+
+    private static TypedPostgresParameter CreateScalarParameter(string factoryName) =>
+        factoryName switch
+        {
+            "Text" => PostgresParam.Text("typed"),
+            "VarChar" => PostgresParam.VarChar("typed"),
+            "Char" => PostgresParam.Char("typed"),
+            "Boolean" => PostgresParam.Boolean(true),
+            "SmallInt" => PostgresParam.SmallInt(-123),
+            "Integer" => PostgresParam.Integer(42),
+            "BigInt" => PostgresParam.BigInt(1234567890123L),
+            "Real" => PostgresParam.Real(12.5F),
+            "Double" => PostgresParam.Double(12.5D),
+            "Numeric" => PostgresParam.Numeric(12345.6789M),
+            "Uuid" => PostgresParam.Uuid(Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b")),
+            _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
+        };
+
     private static TypedPostgresParameter CreateTextLikeParameter(string factoryName) =>
         factoryName switch
         {
+            "Text" => PostgresParam.Text("typed"),
             "VarChar" => PostgresParam.VarChar("typed"),
             "Char" => PostgresParam.Char("typed"),
             "Json" => PostgresParam.Json("{\"name\":\"typed\"}"),
@@ -437,6 +672,46 @@ public sealed class PostgreSqlTypeContractIntegrationTests
             "TimestampTz" => PostgresParam.TimestampTz(null),
             "Interval" => PostgresParam.Interval(null),
             _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
+        };
+
+    private static TypedPostgresParameter CreateNullArrayParameter(string factoryName) =>
+        factoryName switch
+        {
+            "Integer" => PostgresParam.Array<int>(null, NpgsqlDbType.Integer),
+            "Uuid" => PostgresParam.Array<Guid>(null, NpgsqlDbType.Uuid),
+            "Text" => PostgresParam.Array<string>(null, NpgsqlDbType.Text),
+            _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
+        };
+
+    private static int[] CreateIntegerArray(string scenario) =>
+        scenario switch
+        {
+            "single" => [1],
+            "multiple" => [1, 2, 3],
+            "empty" => [],
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario)),
+        };
+
+    private static Guid[] CreateUuidArray(string scenario) =>
+        scenario switch
+        {
+            "single" => [Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b")],
+            "multiple" =>
+            [
+                Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b"),
+                Guid.Parse("50b71c82-12f8-4f0b-8d8c-f03017d3a48c"),
+            ],
+            "empty" => [],
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario)),
+        };
+
+    private static List<string> CreateTextList(string scenario) =>
+        scenario switch
+        {
+            "single" => ["typed"],
+            "multiple" => ["typed", "parameters"],
+            "empty" => [],
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario)),
         };
 
     private sealed class RawNpgsqlParameter : SqlMapper.ICustomQueryParameter
@@ -515,5 +790,23 @@ public sealed class PostgreSqlTypeContractIntegrationTests
         public decimal Value { get; set; }
 
         public string TextValue { get; set; } = string.Empty;
+    }
+
+    private sealed class BinaryProbe
+    {
+        public string TypeName { get; set; } = string.Empty;
+
+        public byte[] Value { get; set; } = [];
+
+        public string HexValue { get; set; } = string.Empty;
+    }
+
+    private sealed class ArrayProbe<T>
+    {
+        public string TypeName { get; set; } = string.Empty;
+
+        public T[] Value { get; set; } = [];
+
+        public int Cardinality { get; set; }
     }
 }

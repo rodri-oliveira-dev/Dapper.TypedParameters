@@ -164,6 +164,7 @@ Initial PostgreSQL preview support:
 | Binary and identifiers | `uuid`, `bytea` |
 | JSON | `json`, `jsonb` |
 | Temporal | `date`, `time without time zone`, `timestamp without time zone`, `timestamp with time zone`, `interval` |
+| Arrays | Explicitly typed arrays of supported PostgreSQL v1 scalar types |
 
 PostgreSQL contracts intentionally follow Npgsql/PostgreSQL semantics rather
 than SQL Server parameter symmetry:
@@ -185,6 +186,10 @@ than SQL Server parameter symmetry:
   `DateTimeKind.Utc`; it does not convert local or unspecified values.
 - `PostgresParam.Interval(value)` uses `TimeSpan`. PostgreSQL intervals with
   month or year components cannot be represented by `TimeSpan`.
+- `PostgresParam.Array<T>(value, elementType)` accepts `T[]` and `List<T>`
+  values without copying them, and sends `NpgsqlDbType.Array | elementType`.
+  The `elementType` must be one of the scalar PostgreSQL types supported by
+  this package and must not already include `Array`, `Range`, or `Multirange`.
 
 ## Compatibility
 

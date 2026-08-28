@@ -30,6 +30,25 @@ public sealed class PostgresParamTests
             { "Interval", NpgsqlDbType.Interval },
         };
 
+    public static TheoryData<NpgsqlDbType> InvalidArrayElementTypes =>
+        new()
+        {
+            NpgsqlDbType.Array,
+            NpgsqlDbType.Array | NpgsqlDbType.Integer,
+            NpgsqlDbType.Range,
+            NpgsqlDbType.IntegerRange,
+            NpgsqlDbType.Multirange,
+            NpgsqlDbType.IntegerMultirange,
+        };
+
+    public static TheoryData<NpgsqlDbType> UnsupportedArrayElementTypes =>
+        new()
+        {
+            NpgsqlDbType.Unknown,
+            NpgsqlDbType.Inet,
+            NpgsqlDbType.Hstore,
+        };
+
     [Theory]
     [MemberData(nameof(ScalarFactories))]
     public void Scalar_factories_create_expected_contract(
@@ -79,6 +98,75 @@ public sealed class PostgresParamTests
     }
 
     [Fact]
+    public void Array_accepts_array_value_without_copying()
+    {
+        int[] value = [1, 2, 3];
+
+        var parameter = PostgresParam.Array(value, NpgsqlDbType.Integer);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Integer, parameter.NpgsqlDbType);
+    }
+
+    [Fact]
+    public void Array_accepts_list_value_without_copying()
+    {
+        List<Guid> value =
+        [
+            Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b"),
+            Guid.Parse("50b71c82-12f8-4f0b-8d8c-f03017d3a48c"),
+        ];
+
+        var parameter = PostgresParam.Array(value, NpgsqlDbType.Uuid);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Uuid, parameter.NpgsqlDbType);
+    }
+
+    [Fact]
+    public void Array_preserves_empty_array()
+    {
+        string[] value = [];
+
+        var parameter = PostgresParam.Array(value, NpgsqlDbType.Text);
+
+        Assert.Same(value, parameter.Value);
+        Assert.Empty(Assert.IsAssignableFrom<IList<string>>(parameter.Value));
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Text, parameter.NpgsqlDbType);
+    }
+
+    [Fact]
+    public void Array_accepts_null_value()
+    {
+        var parameter = PostgresParam.Array<int>(null, NpgsqlDbType.Integer);
+
+        Assert.Null(parameter.Value);
+        Assert.Equal(NpgsqlDbType.Array | NpgsqlDbType.Integer, parameter.NpgsqlDbType);
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidArrayElementTypes))]
+    public void Array_rejects_element_types_with_array_range_or_multirange_semantics(
+        NpgsqlDbType elementType)
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => PostgresParam.Array<int>([], elementType));
+
+        Assert.Equal("elementType", exception.ParamName);
+    }
+
+    [Theory]
+    [MemberData(nameof(UnsupportedArrayElementTypes))]
+    public void Array_rejects_element_types_outside_v1_scalar_contract(
+        NpgsqlDbType elementType)
+    {
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(
+            () => PostgresParam.Array<string>([], elementType));
+
+        Assert.Equal("elementType", exception.ParamName);
+    }
+
+    [Fact]
     public void PostgresParam_public_factories_are_explicit()
     {
         string[] factoryNames = typeof(PostgresParam)
@@ -91,6 +179,7 @@ public sealed class PostgresParamTests
         Assert.Equal(
             new[]
             {
+                "Array",
                 "BigInt",
                 "Boolean",
                 "Bytea",

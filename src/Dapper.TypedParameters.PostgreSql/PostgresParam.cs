@@ -99,6 +99,26 @@ public static class PostgresParam
         new(value, NpgsqlDbType.Bytea);
 
     /// <summary>
+    /// Creates a PostgreSQL array parameter with an explicit PostgreSQL element type.
+    /// </summary>
+    /// <param name="value">The array or list value to send, or <see langword="null"/>.</param>
+    /// <param name="elementType">The PostgreSQL type of each array element.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="elementType"/> is not a supported v1 scalar element type.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="elementType"/> already includes array, range, or multirange semantics.
+    /// </exception>
+    public static TypedPostgresParameter Array<T>(
+        IList<T>? value,
+        NpgsqlDbType elementType)
+    {
+        ValidateArrayElementType(elementType);
+
+        return new(value, NpgsqlDbType.Array | elementType);
+    }
+
+    /// <summary>
     /// Creates a PostgreSQL <c>date</c> parameter with explicit PostgreSQL parameter metadata.
     /// </summary>
     public static TypedPostgresParameter Date(DateOnly? value) =>
@@ -150,4 +170,50 @@ public static class PostgresParam
     /// </remarks>
     public static TypedPostgresParameter Interval(TimeSpan? value) =>
         new(value, NpgsqlDbType.Interval);
+
+    private static void ValidateArrayElementType(NpgsqlDbType elementType)
+    {
+        if ((elementType & NpgsqlDbType.Array) != 0 ||
+            (elementType & NpgsqlDbType.Range) != 0 ||
+            (elementType & NpgsqlDbType.Multirange) != 0)
+        {
+            throw new ArgumentException(
+                "Array element type must not include array, range, or multirange semantics.",
+                nameof(elementType));
+        }
+
+        if (!IsSupportedArrayElementType(elementType))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(elementType),
+                elementType,
+                "Array element type must be one of the PostgreSQL scalar types supported by this package.");
+        }
+    }
+
+    private static bool IsSupportedArrayElementType(NpgsqlDbType elementType) =>
+        elementType switch
+        {
+            NpgsqlDbType.Text or
+            NpgsqlDbType.Varchar or
+            NpgsqlDbType.Char or
+            NpgsqlDbType.Boolean or
+            NpgsqlDbType.Smallint or
+            NpgsqlDbType.Integer or
+            NpgsqlDbType.Bigint or
+            NpgsqlDbType.Real or
+            NpgsqlDbType.Double or
+            NpgsqlDbType.Numeric or
+            NpgsqlDbType.Money or
+            NpgsqlDbType.Json or
+            NpgsqlDbType.Jsonb or
+            NpgsqlDbType.Uuid or
+            NpgsqlDbType.Bytea or
+            NpgsqlDbType.Date or
+            NpgsqlDbType.Time or
+            NpgsqlDbType.Timestamp or
+            NpgsqlDbType.TimestampTz or
+            NpgsqlDbType.Interval => true,
+            _ => false,
+        };
 }

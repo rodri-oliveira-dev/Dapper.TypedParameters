@@ -70,6 +70,20 @@ implying PostgreSQL `numeric(p, s)` typmod semantics.
 text only. The provider does not serialize POCOs, use `JsonSerializer`, handle
 `JsonDocument` specially, or configure global Npgsql JSON mapping.
 
+PostgreSQL arrays are supported through
+`PostgresParam.Array<T>(IList<T>? value, NpgsqlDbType elementType)`. The public
+shape intentionally matches the collection kinds Npgsql documents for direct
+array writes (`T[]` and `List<T>`) without copying values. The final provider
+metadata is `NpgsqlDbType.Array | elementType`.
+
+Array `elementType` values are limited to the scalar PostgreSQL types already
+supported by this provider version. Values that already include `Array`,
+`Range`, or `Multirange` semantics are rejected so ranges, multiranges, arrays
+of arrays, and named range/multirange enum values are not accepted
+accidentally. PostgreSQL enums, composites, hstore, inet/cidr, PostGIS, ltree,
+NodaTime-specific types, and other deferred PostgreSQL-specific types remain
+outside the v1 array contract.
+
 Temporal factories use provider-specific timestamp semantics:
 
 - `Timestamp(DateTime? value)` represents PostgreSQL
