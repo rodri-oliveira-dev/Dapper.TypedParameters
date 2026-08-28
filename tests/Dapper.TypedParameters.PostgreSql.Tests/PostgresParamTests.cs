@@ -15,9 +15,19 @@ public sealed class PostgresParamTests
             { "BigInt", NpgsqlDbType.Bigint },
             { "Real", NpgsqlDbType.Real },
             { "Double", NpgsqlDbType.Double },
+            { "Numeric", NpgsqlDbType.Numeric },
             { "Money", NpgsqlDbType.Money },
             { "Uuid", NpgsqlDbType.Uuid },
             { "Bytea", NpgsqlDbType.Bytea },
+            { "VarChar", NpgsqlDbType.Varchar },
+            { "Char", NpgsqlDbType.Char },
+            { "Json", NpgsqlDbType.Json },
+            { "Jsonb", NpgsqlDbType.Jsonb },
+            { "Date", NpgsqlDbType.Date },
+            { "Time", NpgsqlDbType.Time },
+            { "Timestamp", NpgsqlDbType.Timestamp },
+            { "TimestampTz", NpgsqlDbType.TimestampTz },
+            { "Interval", NpgsqlDbType.Interval },
         };
 
     [Theory]
@@ -84,15 +94,71 @@ public sealed class PostgresParamTests
                 "BigInt",
                 "Boolean",
                 "Bytea",
+                "Char",
+                "Date",
                 "Double",
                 "Integer",
+                "Interval",
+                "Json",
+                "Jsonb",
                 "Money",
+                "Numeric",
                 "Real",
                 "SmallInt",
                 "Text",
+                "Time",
+                "Timestamp",
+                "TimestampTz",
                 "Uuid",
+                "VarChar",
             },
             factoryNames);
+    }
+
+    [Fact]
+    public void Timestamp_rejects_utc_datetime()
+    {
+        var exception = Assert.Throws<ArgumentException>(
+            () => PostgresParam.Timestamp(new DateTime(2026, 8, 28, 13, 45, 12, DateTimeKind.Utc)));
+
+        Assert.Equal("value", exception.ParamName);
+    }
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void Timestamp_accepts_local_or_unspecified_wall_clock_datetime(DateTimeKind kind)
+    {
+        DateTime value = new(2026, 8, 28, 13, 45, 12, kind);
+
+        var parameter = PostgresParam.Timestamp(value);
+
+        Assert.Equal(value, parameter.Value);
+        Assert.Equal(NpgsqlDbType.Timestamp, parameter.NpgsqlDbType);
+    }
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void TimestampTz_rejects_non_utc_datetime(DateTimeKind kind)
+    {
+        DateTime value = new(2026, 8, 28, 13, 45, 12, kind);
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => PostgresParam.TimestampTz(value));
+
+        Assert.Equal("value", exception.ParamName);
+    }
+
+    [Fact]
+    public void TimestampTz_accepts_utc_datetime()
+    {
+        DateTime value = new(2026, 8, 28, 13, 45, 12, DateTimeKind.Utc);
+
+        var parameter = PostgresParam.TimestampTz(value);
+
+        Assert.Equal(value, parameter.Value);
+        Assert.Equal(NpgsqlDbType.TimestampTz, parameter.NpgsqlDbType);
     }
 
     public static TypedPostgresParameter CreateNonNullParameter(string factoryName) =>
@@ -105,9 +171,33 @@ public sealed class PostgresParamTests
             "BigInt" => PostgresParam.BigInt(long.MinValue),
             "Real" => PostgresParam.Real(12.5F),
             "Double" => PostgresParam.Double(12.5D),
+            "Numeric" => PostgresParam.Numeric(12345.6789M),
             "Money" => PostgresParam.Money(-12.34M),
             "Uuid" => PostgresParam.Uuid(Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b")),
             "Bytea" => PostgresParam.Bytea([0x01, 0x02]),
+            "VarChar" => PostgresParam.VarChar("value"),
+            "Char" => PostgresParam.Char("value"),
+            "Json" => PostgresParam.Json("{\"name\":\"typed\"}"),
+            "Jsonb" => PostgresParam.Jsonb("{\"name\":\"typed\"}"),
+            "Date" => PostgresParam.Date(new DateOnly(2026, 8, 28)),
+            "Time" => PostgresParam.Time(new TimeOnly(13, 45, 12)),
+            "Timestamp" => PostgresParam.Timestamp(new DateTime(
+                2026,
+                8,
+                28,
+                13,
+                45,
+                12,
+                DateTimeKind.Unspecified)),
+            "TimestampTz" => PostgresParam.TimestampTz(new DateTime(
+                2026,
+                8,
+                28,
+                16,
+                45,
+                12,
+                DateTimeKind.Utc)),
+            "Interval" => PostgresParam.Interval(TimeSpan.FromHours(25)),
             _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
         };
 
@@ -121,9 +211,19 @@ public sealed class PostgresParamTests
             "BigInt" => PostgresParam.BigInt(null),
             "Real" => PostgresParam.Real(null),
             "Double" => PostgresParam.Double(null),
+            "Numeric" => PostgresParam.Numeric(null),
             "Money" => PostgresParam.Money(null),
             "Uuid" => PostgresParam.Uuid(null),
             "Bytea" => PostgresParam.Bytea(null),
+            "VarChar" => PostgresParam.VarChar(null),
+            "Char" => PostgresParam.Char(null),
+            "Json" => PostgresParam.Json(null),
+            "Jsonb" => PostgresParam.Jsonb(null),
+            "Date" => PostgresParam.Date(null),
+            "Time" => PostgresParam.Time(null),
+            "Timestamp" => PostgresParam.Timestamp(null),
+            "TimestampTz" => PostgresParam.TimestampTz(null),
+            "Interval" => PostgresParam.Interval(null),
             _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
         };
 
@@ -137,9 +237,19 @@ public sealed class PostgresParamTests
             "BigInt" => long.MinValue,
             "Real" => 12.5F,
             "Double" => 12.5D,
+            "Numeric" => 12345.6789M,
             "Money" => -12.34M,
             "Uuid" => Guid.Parse("f0da086a-cf8d-4682-8a55-e96017890d2b"),
             "Bytea" => new byte[] { 0x01, 0x02 },
+            "VarChar" => "value",
+            "Char" => "value",
+            "Json" => "{\"name\":\"typed\"}",
+            "Jsonb" => "{\"name\":\"typed\"}",
+            "Date" => new DateOnly(2026, 8, 28),
+            "Time" => new TimeOnly(13, 45, 12),
+            "Timestamp" => new DateTime(2026, 8, 28, 13, 45, 12, DateTimeKind.Unspecified),
+            "TimestampTz" => new DateTime(2026, 8, 28, 16, 45, 12, DateTimeKind.Utc),
+            "Interval" => TimeSpan.FromHours(25),
             _ => throw new ArgumentOutOfRangeException(nameof(factoryName)),
         };
 }

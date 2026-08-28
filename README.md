@@ -159,9 +159,32 @@ Initial PostgreSQL preview support:
 
 | Family | PostgreSQL types |
 | --- | --- |
-| Strings | `text` |
-| Numeric | `boolean`, `smallint`, `integer`, `bigint`, `real`, `double precision`, `money` |
+| Strings | `text`, `character varying`, `character` |
+| Numeric | `boolean`, `smallint`, `integer`, `bigint`, `real`, `double precision`, `numeric`, `money` |
 | Binary and identifiers | `uuid`, `bytea` |
+| JSON | `json`, `jsonb` |
+| Temporal | `date`, `time without time zone`, `timestamp without time zone`, `timestamp with time zone`, `interval` |
+
+PostgreSQL contracts intentionally follow Npgsql/PostgreSQL semantics rather
+than SQL Server parameter symmetry:
+
+- `PostgresParam.VarChar(value)` and `PostgresParam.Char(value)` do not accept a
+  size. In Npgsql, `NpgsqlParameter.Size` for these parameters is not observed
+  by PostgreSQL as a `varchar(n)` or `char(n)` typmod, and values longer than
+  `Size` are truncated before reaching the server.
+- `PostgresParam.Numeric(value)` does not accept precision or scale. Npgsql
+  materializes `Precision` and `Scale` as client parameter metadata, but
+  PostgreSQL still observes an unconstrained `numeric` parameter in the current
+  integration tests.
+- `PostgresParam.Json(value)` and `PostgresParam.Jsonb(value)` accept JSON text.
+  The library does not serialize POCOs or configure Npgsql JSON mapping.
+- `PostgresParam.Timestamp(value)` represents `timestamp without time zone` and
+  rejects UTC `DateTime` values. Use local or unspecified `DateTime` values for
+  wall-clock timestamps.
+- `PostgresParam.TimestampTz(value)` represents a UTC instant and accepts only
+  `DateTimeKind.Utc`; it does not convert local or unspecified values.
+- `PostgresParam.Interval(value)` uses `TimeSpan`. PostgreSQL intervals with
+  month or year components cannot be represented by `TimeSpan`.
 
 ## Compatibility
 
@@ -175,6 +198,7 @@ Initial PostgreSQL preview support:
 | System.Data.SqlClient | Not supported by the SQL Server provider |
 | Declared SQL Server driver compatibility | SQL Server 2016 through SQL Server 2025 |
 | CI-tested SQL Server | `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04` |
+| CI-tested PostgreSQL | `postgres:17.6-bookworm` |
 | Azure SQL Database | Driver-compatible; not integration-tested by this repository |
 | Azure SQL Managed Instance | Driver-compatible; not integration-tested by this repository |
 | Azure Synapse Analytics | Driver-compatible; not integration-tested by this repository |
@@ -235,9 +259,8 @@ dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
-SQL Server integration tests use Docker and `Testcontainers.MsSql`. The
-PostgreSQL integration test project is present for provider behavior that needs
-a real database in later phases.
+SQL Server integration tests use Docker and `Testcontainers.MsSql`.
+PostgreSQL integration tests use Docker and `Testcontainers.PostgreSql`.
 
 ## Release Registries
 

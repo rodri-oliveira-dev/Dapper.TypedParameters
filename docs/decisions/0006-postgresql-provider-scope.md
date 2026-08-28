@@ -42,3 +42,43 @@ JSONB, timestamp semantics, arrays, ranges, multiranges, enums, composites, and
 the absence of a SQL Server-style table-valued parameter equivalent remain
 visible in the provider design instead of being flattened behind a premature
 abstraction.
+
+## Phase 3 parameter metadata decisions
+
+PostgreSQL parameter metadata must describe behavior that is observable through
+Npgsql and PostgreSQL, not behavior copied from `SqlParameter`.
+
+The PostgreSQL provider exposes `VarChar(string? value)` and
+`Char(string? value)` without a size argument. Integration tests with
+`NpgsqlDbType.Varchar`/`NpgsqlDbType.Char` and `NpgsqlParameter.Size` showed
+that PostgreSQL observes the backend type as `character varying` or
+`character`, but not a `varchar(n)` or `char(n)` typmod. Values longer than
+`Size` are truncated before they reach PostgreSQL. A public
+`VarChar(value, size)` or `Char(value, size)` API would therefore be misleading:
+it could look like a server-side contract while actually enabling client-side
+payload truncation.
+
+The PostgreSQL provider exposes `Numeric(decimal? value)` without precision or
+scale arguments. Integration tests with `NpgsqlDbType.Numeric`,
+`NpgsqlParameter.Precision`, and `NpgsqlParameter.Scale` showed PostgreSQL
+observing `numeric`; a value exceeding the declared metadata round-tripped
+without provider rounding, truncation, or server validation. Precision and
+scale are not exposed until a future use case can describe their effect without
+implying PostgreSQL `numeric(p, s)` typmod semantics.
+
+`Json(string? value)` and `Jsonb(string? value)` accept caller-provided JSON
+text only. The provider does not serialize POCOs, use `JsonSerializer`, handle
+`JsonDocument` specially, or configure global Npgsql JSON mapping.
+
+Temporal factories use provider-specific timestamp semantics:
+
+- `Timestamp(DateTime? value)` represents PostgreSQL
+  `timestamp without time zone` / wall-clock time. It accepts
+  `DateTimeKind.Local` and `DateTimeKind.Unspecified`, and rejects
+  `DateTimeKind.Utc`.
+- `TimestampTz(DateTime? value)` represents PostgreSQL
+  `timestamp with time zone` as a UTC instant. It accepts only
+  `DateTimeKind.Utc` and does not convert local or unspecified values.
+- `Interval(TimeSpan? value)` is supported for the first version, with the
+  documented limitation that PostgreSQL intervals can contain month and year
+  components that `TimeSpan` cannot represent.
