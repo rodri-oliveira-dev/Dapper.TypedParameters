@@ -1,8 +1,9 @@
 # NuGet Trusted Publishing setup
 
-This repository publishes `TypedParameters.Dapper.SqlServer` through NuGet.org
-Trusted Publishing and GitHub Actions OIDC. The normal release flow must not
-use a long-lived `NUGET_API_KEY` secret.
+This repository publishes `TypedParameters.Dapper.SqlServer` and
+`TypedParameters.Dapper.PostgreSql` through NuGet.org Trusted Publishing and
+GitHub Actions OIDC. The normal release flow must not use a long-lived
+`NUGET_API_KEY` secret.
 
 ## GitHub
 
@@ -16,28 +17,28 @@ Recommended protection:
 
 - Add at least one required reviewer.
 - Enable deployment protection appropriate for NuGet release approval.
-- Restrict deployment refs to release tags matching:
-
-```text
-v*
-```
+- Restrict deployment refs to the protected `main` branch. The workflow creates
+  or verifies the release tag after validation, but the protected NuGet.org job
+  still runs from `refs/heads/main`.
 
 - Do not add a permanent NuGet API key secret.
 - Do not create a `NUGET_API_KEY` repository or environment secret for the
   normal release flow.
 
-The release workflow references this environment only in the publishing job:
+The release workflow references this environment only in the NuGet.org
+publishing job:
 
 ```yaml
 environment: nuget-release
 ```
 
-Rehearsal runs with `publish=false` do not use the environment and do not
-request NuGet credentials.
+Validation, tag creation, GitHub Packages publication, and GitHub Release
+creation do not request NuGet credentials.
 
 ## NuGet.org
 
-Create a Trusted Publishing policy for GitHub Actions.
+Create one Trusted Publishing policy for each NuGet package using GitHub
+Actions.
 
 Use these values exactly:
 
@@ -69,21 +70,30 @@ environment.
 
 ## Release ref policy
 
-The workflow requires the release ref to be:
+The workflow must be dispatched from:
 
 ```text
-refs/tags/v<package_version>
+refs/heads/main
+```
+
+The `version` input must be SemVer without a `v` prefix. The workflow derives
+the release tag as:
+
+```text
+v<version>
 ```
 
 For example:
 
 ```text
-package_version: 0.1.0-preview.1
-required tag: v0.1.0-preview.1
+version: 1.1.0
+release tag: v1.1.0
 ```
 
-If `publish=true` is selected from any other ref, the workflow fails before
-requesting the temporary NuGet credential.
+The workflow validates, builds, tests, packs, checks package contents, and
+checks package consumption before creating the tag. If the tag already exists
+on the same commit, retry continues idempotently. If the tag points to another
+commit, the workflow fails.
 
 ## Before Prompt 16
 

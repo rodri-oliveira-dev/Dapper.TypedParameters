@@ -6,39 +6,45 @@ English | [Português (Brasil)](README.pt-BR.md)
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_Dapper.TypedParameters&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rodri-oliveira-dev_Dapper.TypedParameters)
 [![CI](https://github.com/rodri-oliveira-dev/Dapper.TypedParameters/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/Dapper.TypedParameters)
 
-`Dapper.TypedParameters.SqlServer` provides explicit SQL Server parameter
-metadata for Dapper using `Microsoft.Data.SqlClient`.
+`Dapper.TypedParameters` hosts provider-specific packages for explicit database
+parameter metadata in Dapper.
 
-Use it when the database contract is known and the SQL Server parameter type,
-size, precision, scale, direction, or table-valued parameter type name should be
-visible at the call site.
+```text
+Dapper.TypedParameters
+├── TypedParameters.Dapper.SqlServer
+└── TypedParameters.Dapper.PostgreSql
+```
+
+The packages are independent. Use the SQL Server package with
+`Microsoft.Data.SqlClient` and `SqlDbType`; use the PostgreSQL package with
+`Npgsql` and `NpgsqlDbType`.
+
+The repository intentionally does not expose a shared `TypedDbParameter` base
+type. SQL Server and PostgreSQL have different provider APIs and database
+semantics, so each package keeps its own small public contract.
 
 ## Installation
 
-Install the latest stable package from NuGet.org:
+Install the SQL Server provider:
 
 ```bash
 dotnet add package TypedParameters.Dapper.SqlServer
 ```
 
-Official package page:
-[TypedParameters.Dapper.SqlServer on NuGet.org](https://www.nuget.org/packages/TypedParameters.Dapper.SqlServer/1.0.0)
-
-For a reproducible 1.0.0 install:
+Install the PostgreSQL provider:
 
 ```bash
-dotnet add package TypedParameters.Dapper.SqlServer --version 1.0.0
+dotnet add package TypedParameters.Dapper.PostgreSql
 ```
 
-The NuGet package identity is separate from the assembly and namespace:
+Package identities are separate from assembly and namespace identities:
 
-```text
-NuGet package: TypedParameters.Dapper.SqlServer
-Assembly: Dapper.TypedParameters.SqlServer.dll
-Namespace: Dapper.TypedParameters.SqlServer
-```
+| Package | Assembly | Namespace |
+| --- | --- | --- |
+| `TypedParameters.Dapper.SqlServer` | `Dapper.TypedParameters.SqlServer.dll` | `Dapper.TypedParameters.SqlServer` |
+| `TypedParameters.Dapper.PostgreSql` | `Dapper.TypedParameters.PostgreSql.dll` | `Dapper.TypedParameters.PostgreSql` |
 
-## Minimal Example
+## SQL Server Example
 
 ```csharp
 using Dapper;
@@ -59,20 +65,36 @@ var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
     });
 ```
 
-```text
-.NET string
-  -> explicit SQL metadata
-  -> SQL Server varchar(11) parameter
+## PostgreSQL Example
+
+```csharp
+using Dapper;
+using Dapper.TypedParameters.PostgreSql;
+using Npgsql;
+
+await using var connection = new NpgsqlConnection(connectionString);
+
+var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
+    """
+    SELECT id, document, payload, created_at
+    FROM customers
+    WHERE document = @Document
+      AND created_at >= @CreatedAt;
+    """,
+    new
+    {
+        Document = PostgresParam.VarChar(document),
+        CreatedAt = PostgresParam.TimestampTz(fromUtc)
+    });
 ```
 
 ## Why?
 
 Dapper parameter inference is correct and convenient for many scenarios. The
-trade-off is that the SQL Server metadata sent to the provider is not always
-obvious in the calling code.
+trade-off is that provider metadata is not always obvious in calling code.
 
 When code already knows the database contract, explicit metadata can make that
-contract visible:
+contract visible and testable:
 
 ```csharp
 new
@@ -88,22 +110,21 @@ new
 }
 ```
 
-The second form does not claim that `varchar` is universally better than
-`nvarchar`. It says that this parameter is intended to match a known
-`varchar(11)` contract.
+```csharp
+new
+{
+    Payload = PostgresParam.Jsonb(json),
+    CreatedAt = PostgresParam.TimestampTz(createdAtUtc)
+}
+```
 
-## The Problem
+The library does not claim that one database type is universally faster than
+another. It makes a known contract explicit; performance-sensitive workloads
+still need measurement.
 
-SQL Server evaluates parameters using SQL type metadata, not only CLR values. A
-metadata mismatch can cause SQL Server conversions depending on the involved
-types, type precedence, collation, query shape, indexes, and execution plan.
+## Supported Types
 
-This library gives the caller control over the parameter metadata sent through
-`Microsoft.Data.SqlClient`. It does not guarantee faster queries, remove every
-implicit conversion, or analyze execution plans. Measure performance-sensitive
-queries in your own workload.
-
-## Supported Parameter Types
+SQL Server:
 
 | Family | SQL Server types |
 | --- | --- |
@@ -114,6 +135,90 @@ queries in your own workload.
 | Output parameters | `AsOutput()`, `AsInputOutput()`, `OutputValue`, `GetValue<T>()` |
 | Table-valued parameters | `SqlDbType.Structured` with explicit `TypeName` and caller-provided `DataTable` |
 
+PostgreSQL:
+
+| Family | Factories | PostgreSQL types |
+| --- | --- | --- |
+| Text | `Text`, `VarChar`, `Char` | `text`, `character varying`, `character` |
+| Boolean/numeric | `Boolean`, `SmallInt`, `Integer`, `BigInt`, `Real`, `Double`, `Numeric`, `Money` | `boolean`, `smallint`, `integer`, `bigint`, `real`, `double precision`, `numeric`, `money` |
+| Identifier/binary | `Uuid`, `Bytea` | `uuid`, `bytea` |
+| JSON | `Json`, `Jsonb` | `json`, `jsonb` |
+| Temporal | `Date`, `Time`, `Timestamp`, `TimestampTz`, `Interval` | `date`, `time without time zone`, `timestamp without time zone`, `timestamp with time zone`, `interval` |
+| Arrays | `Array<T>(IList<T>? value, NpgsqlDbType elementType)` | `integer[]`, `uuid[]`, `text[]`, and arrays of other supported v1 scalar element types |
+
+## PostgreSQL Semantics
+
+`PostgresParam.Text(value)` sends PostgreSQL `text`. `VarChar(value)` sends
+`character varying`, and `Char(value)` sends `character`. The PostgreSQL API
+does not expose `VarChar(value, size)` or `Char(value, size)`: integration tests
+show that `NpgsqlParameter.Size` does not make PostgreSQL observe a
+`varchar(n)` or `char(n)` typmod, and over-size values are truncated by Npgsql
+before reaching the server.
+
+`PostgresParam.Numeric(value)` sends unconstrained PostgreSQL `numeric`.
+Precision and scale are not public API in this version because the integration
+tests showed `NpgsqlParameter.Precision` and `Scale` as client parameter
+metadata, not as a proven server-side `numeric(p, s)` typmod contract.
+
+`PostgresParam.Json(value)` maps to PostgreSQL `json`.
+`PostgresParam.Jsonb(value)` maps to PostgreSQL `jsonb`. Version 1 accepts
+caller-provided JSON text; automatic POCO serialization is outside the scope of
+this package.
+
+Temporal factories follow PostgreSQL/Npgsql semantics:
+
+- `Date(DateOnly?)` sends `date`.
+- `Time(TimeOnly?)` sends `time without time zone`.
+- `Timestamp(DateTime?)` sends `timestamp without time zone`; it accepts
+  `DateTimeKind.Local` or `DateTimeKind.Unspecified` wall-clock values and
+  rejects UTC values.
+- `TimestampTz(DateTime?)` sends `timestamp with time zone`; it accepts only
+  `DateTimeKind.Utc` and does not convert local or unspecified values.
+- `Interval(TimeSpan?)` sends `interval`; month and year interval components
+  cannot be represented by `TimeSpan`.
+
+`timestamptz` represents an instant. It does not store a time zone identifier.
+
+Arrays are a native PostgreSQL feature. `PostgresParam.Array<T>(value,
+elementType)` requires an explicit scalar element `NpgsqlDbType` and sends
+`NpgsqlDbType.Array | elementType`. `null` is sent as `DBNull.Value` with the
+declared array type; empty arrays remain empty arrays. This is not a SQL Server
+TVP equivalent.
+
+## Provider Differences
+
+| Capability | SQL Server provider | PostgreSQL provider |
+| --- | --- | --- |
+| ADO.NET provider | `Microsoft.Data.SqlClient` | `Npgsql` |
+| Type metadata | `SqlDbType` | `NpgsqlDbType` |
+| Input parameters | Yes | Yes |
+| Output/input-output helpers | Yes | Not in this version |
+| Bulk row-shaped parameters | SQL Server TVPs through `DataTable` | No artificial TVP; use PostgreSQL-native patterns outside this package |
+| Arrays | Binary arrays as scalar values | Native PostgreSQL arrays with explicit element type |
+| JSON | Not modeled by the SQL Server package | `json` and `jsonb` |
+| Timestamp semantics | SQL Server temporal types | PostgreSQL `timestamp`/`timestamptz` rules |
+
+## PostgreSQL Out Of Scope
+
+The PostgreSQL package does not support these features in this version:
+
+- PostgreSQL enums;
+- composites;
+- generic `DataTypeName` UDT APIs;
+- ranges;
+- multiranges;
+- PostGIS;
+- network types;
+- `hstore`;
+- full-text-search types;
+- extension-specific types;
+- NodaTime;
+- automatic POCO JSON serialization;
+- `COPY` or bulk APIs;
+- schema inspection;
+- positional-placeholder rewriting;
+- SQL Server-style output parameter parity.
+
 ## Compatibility
 
 | Item | Support |
@@ -121,23 +226,22 @@ queries in your own workload.
 | Target frameworks | `net8.0`; `net10.0` |
 | Dapper | `2.1.79` |
 | Microsoft.Data.SqlClient | `6.1.6` |
-| ADO.NET provider | `Microsoft.Data.SqlClient` only |
-| System.Data.SqlClient | Not supported |
+| Npgsql | `10.0.3` |
+| ADO.NET providers | `Microsoft.Data.SqlClient` for SQL Server; `Npgsql` for PostgreSQL |
+| System.Data.SqlClient | Not supported by the SQL Server provider |
 | Declared SQL Server driver compatibility | SQL Server 2016 through SQL Server 2025 |
 | CI-tested SQL Server | `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04` |
+| CI-tested PostgreSQL | `postgres:17.6-bookworm` |
 | Azure SQL Database | Driver-compatible; not integration-tested by this repository |
 | Azure SQL Managed Instance | Driver-compatible; not integration-tested by this repository |
 | Azure Synapse Analytics | Driver-compatible; not integration-tested by this repository |
 
-The SQL Server and Azure SQL entries describe `Microsoft.Data.SqlClient` driver
-compatibility. This repository currently integration-tests only the SQL Server
-2022 container image listed above.
-
 ## Documentation
 
-- [Getting started](docs/getting-started.md)
+- [Getting started with SQL Server](docs/getting-started.md)
+- [PostgreSQL provider guide](docs/postgresql.md)
 - [Motivation](docs/motivation.md)
-- Examples:
+- SQL Server examples:
   - [Strings](docs/examples/strings.md)
   - [Numeric](docs/examples/numeric.md)
   - [Binary and identifiers](docs/examples/binary.md)
@@ -148,29 +252,32 @@ compatibility. This repository currently integration-tests only the SQL Server
 
 ## Design Principles
 
-- Make SQL Server parameter metadata explicit at the call site.
+- Make provider-specific parameter metadata explicit at the call site.
 - Keep the public API small and predictable.
-- Use `Microsoft.Data.SqlClient` directly.
+- Use ADO.NET provider types directly.
 - Preserve ordinary Dapper calling patterns.
 - Prefer explicit factory methods over automatic SQL type selection.
+- Avoid cross-provider abstractions until identical responsibilities are proven.
 
 ## What This Library Does Not Do
 
 The library does not:
 
 - inspect your database schema;
-- query SQL Server for metadata;
+- query the database for metadata;
 - rewrite SQL;
 - analyze execution plans;
-- detect `CONVERT_IMPLICIT`;
+- detect implicit conversions;
 - automatically choose SQL types;
-- map POCOs to table-valued parameters;
+- map POCOs to SQL Server table-valued parameters;
 - create SQL Server user-defined table types;
+- serialize POCOs to PostgreSQL JSON;
+- emulate SQL Server TVPs in PostgreSQL;
 - support `System.Data.SqlClient`.
 
 ## Testing and Quality
 
-The repository validates unit tests, SQL Server integration tests, package
+The repository validates unit tests, provider integration tests, package
 contents, package consumption, public API baselines, SourceLink, package
 validation, and SonarQube Cloud Quality Gate checks for the supported target
 frameworks.
@@ -182,20 +289,19 @@ dotnet restore Dapper.TypedParameters.sln
 dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
 dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
+dotnet pack src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
-Integration tests use SQL Server through Docker and `Testcontainers.MsSql`.
+SQL Server integration tests use Docker and `Testcontainers.MsSql`.
+PostgreSQL integration tests use Docker and `Testcontainers.PostgreSql`.
 
 ## Release Registries
 
-The protected release workflow publishes the same validated `.nupkg` to
-NuGet.org, the primary public installation source, and GitHub Packages, the
-repository-linked secondary registry. A rehearsal with `publish=false` never
-publishes; `publish=true` requires the matching version tag and approval of the
-`nuget-release` environment. NuGet.org uses Trusted Publishing, while GitHub
-Packages uses the ephemeral workflow `GITHUB_TOKEN`. After its first
-publication, the GitHub package must be made public explicitly before it can be
-consumed anonymously.
+The protected release workflow accepts a SemVer `version` without a `v` prefix.
+It validates, packs, and publishes `TypedParameters.Dapper.SqlServer` and
+`TypedParameters.Dapper.PostgreSql` as separate NuGet packages. NuGet.org uses
+Trusted Publishing through the `nuget-release` environment; GitHub Packages
+uses the ephemeral workflow `GITHUB_TOKEN`.
 
 ## Contributing
 
@@ -209,4 +315,4 @@ This project is licensed under the MIT license.
 ## Disclaimer
 
 This project is not affiliated with, maintained by, or officially endorsed by
-the Dapper project or Microsoft.
+the Dapper project, Microsoft, PostgreSQL, or the Npgsql project.

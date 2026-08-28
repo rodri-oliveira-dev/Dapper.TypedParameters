@@ -54,13 +54,14 @@
     `https://nuget.pkg.github.com/rodri-oliveira-dev/index.json`.
 34. GitHub Packages authentication: the ephemeral workflow `GITHUB_TOKEN`;
     no long-lived package token is permitted.
-35. GitHub Packages permission: `packages: write`, restricted to the protected
-    `publish` job.
+35. GitHub Packages permission: `packages: write`, restricted to the GitHub
+    Packages publication job.
 36. Repository association: package metadata `RepositoryUrl` must remain
     `https://github.com/rodri-oliveira-dev/Dapper.TypedParameters`.
-37. Protected publication contract: `publish=false` performs validation and
-    packaging only; `publish=true` publishes the same previously validated
-    `.nupkg` sequentially to NuGet.org and GitHub Packages.
+37. Protected publication contract: the release workflow is dispatched from
+    `main` with a SemVer `version` input without `v`; it validates, builds,
+    tests, packs, and consumes the packages before creating or verifying the
+    matching `v<version>` tag.
 38. Retry behavior: both pushes use `--skip-duplicate` so an interrupted
     protected release can be resumed without replacing an existing version.
 39. GitHub Packages visibility: after the first publication, the repository
@@ -72,3 +73,14 @@
     the push command exit status gates registry acceptance. Anonymous
     post-publication consumption is not a release gate while package visibility
     can still be private.
+41. Multi-package release contract: the release workflow accepts one SemVer
+    `version` input without a `v` prefix and derives `v<version>` as the release
+    tag.
+42. The release workflow must be dispatched from `main`; the tag is created or
+    verified only after validation, build, tests, package validation, content
+    validation, and package consumption validation pass for both
+    `TypedParameters.Dapper.SqlServer` and `TypedParameters.Dapper.PostgreSql`.
+43. NuGet.org and GitHub Packages publication run in separate jobs, with
+    explicit publish steps per package and `--skip-duplicate` for retry safety.
+44. GitHub Release creation runs only after both registry publication jobs
+    complete and uploads both `.nupkg` and `.snupkg` artifacts.

@@ -3,72 +3,153 @@ name: Package Release
 on:
   workflow_dispatch:
     inputs:
-      package_version:
-        description: NuGet package version to validate and optionally publish.
+      version:
+        description: NuGet package version without a v prefix.
         required: true
-        default: 0.1.0-preview.1
+        default: 1.1.0
         type: string
-      publish:
-        description: Publish to NuGet.org and GitHub Packages. Leave false for rehearsal.
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.package_version }}
+  group: ${{ github.workflow }}-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate ${{ matrix.framework }}
+  build-and-pack:
+    name: Validate, build, test and pack
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     permissions:
       contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        framework:
-          - net8.0
-          - net10.0
+    outputs:
+      package-version: ${{ steps.version.outputs.package_version }}
+      release-tag: ${{ steps.version.outputs.release_tag }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: |
             8.0.x
             10.0.302
 
-      - name: Validate requested version
-        shell: pwsh
+      - name: Validate release ref and version
+        id: version
+        shell: bash
         env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: |
-          $version = $env:PACKAGE_VERSION
-          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
-            throw "package_version '$version' is not an allowed NuGet release version."
-          }
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF" != "refs/heads/main" || "$GITHUB_REF_NAME" != "main" ]]; then
+            echo "::error::Release workflow must be dispatched from main. Current ref is '$GITHUB_REF'."
+            exit 1
+          fi
+
+          if [[ "$REQUESTED_VERSION" == v* ]]; then
+            echo "::error::Use version without a v prefix. Received '$REQUESTED_VERSION'."
+            exit 1
+          fi
+
+          semver_regex='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$'
+          if [[ ! "$REQUESTED_VERSION" =~ $semver_regex ]]; then
+            echo "::error::Version '$REQUESTED_VERSION' is not an allowed SemVer package version."
+            exit 1
+          fi
+
+          echo "package_version=$REQUESTED_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_tag=v$REQUESTED_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify existing release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+          VALIDATED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [[ "$tag_sha" != "$VALIDATED_SHA" ]]; then
+              echo "::error::Tag '$RELEASE_TAG' points to $tag_sha instead of $VALIDATED_SHA."
+              exit 1
+            fi
+
+            echo "Tag '$RELEASE_TAG' already exists on the validated commit; retry can continue."
+          fi
 
       - name: Restore
         run: dotnet restore Dapper.TypedParameters.sln
 
+      - name: Validate package identities and versions
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $projects = @(
+            @{
+              PackageId = "TypedParameters.Dapper.SqlServer"
+              Project = "src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj"
+            },
+            @{
+              PackageId = "TypedParameters.Dapper.PostgreSql"
+              Project = "src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj"
+            }
+          )
+
+          foreach ($project in $projects) {
+            $json = dotnet msbuild $project.Project `
+              -getProperty:PackageId `
+              -getProperty:Version `
+              -getProperty:PackageVersion `
+              "-property:Version=$env:PACKAGE_VERSION" `
+              "-property:PackageVersion=$env:PACKAGE_VERSION"
+
+            $properties = ($json | Out-String | ConvertFrom-Json).Properties
+            if ($properties.PackageId -ne $project.PackageId) {
+              throw "$($project.Project) resolved PackageId '$($properties.PackageId)' instead of '$($project.PackageId)'."
+            }
+
+            if ($properties.Version -ne $env:PACKAGE_VERSION) {
+              throw "$($project.Project) resolved Version '$($properties.Version)' instead of '$env:PACKAGE_VERSION'."
+            }
+
+            if ($properties.PackageVersion -ne $env:PACKAGE_VERSION) {
+              throw "$($project.Project) resolved PackageVersion '$($properties.PackageVersion)' instead of '$env:PACKAGE_VERSION'."
+            }
+          }
+
       - name: Build
         env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-        run: dotnet build Dapper.TypedParameters.sln --framework ${{ matrix.framework }} --configuration Release --no-restore "-p:PackageVersion=${PACKAGE_VERSION}"
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: >
+          dotnet build Dapper.TypedParameters.sln
+          --configuration Release
+          --no-restore
+          "-p:Version=${PACKAGE_VERSION}"
+          "-p:PackageVersion=${PACKAGE_VERSION}"
 
-      - name: Test unit
+      - name: Test SQL Server unit
         run: >
           dotnet test tests/Dapper.TypedParameters.SqlServer.Tests/Dapper.TypedParameters.SqlServer.Tests.csproj
-          --framework ${{ matrix.framework }}
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Test PostgreSQL unit
+        run: >
+          dotnet test tests/Dapper.TypedParameters.PostgreSql.Tests/Dapper.TypedParameters.PostgreSql.Tests.csproj
           --configuration Release
           --no-build
           --verbosity normal
@@ -78,221 +159,322 @@ jobs:
           docker version
           docker info
 
-      - name: Test integration
+      - name: Test SQL Server integration
         env:
           ACCEPT_EULA: "Y"
         run: >
           dotnet test tests/Dapper.TypedParameters.SqlServer.IntegrationTests/Dapper.TypedParameters.SqlServer.IntegrationTests.csproj
-          --framework ${{ matrix.framework }}
           --configuration Release
           --no-build
           --verbosity normal
 
-  package:
-    name: Package and verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: validate
-    permissions:
-      contents: read
+      - name: Test PostgreSQL integration
+        run: >
+          dotnet test tests/Dapper.TypedParameters.PostgreSql.IntegrationTests/Dapper.TypedParameters.PostgreSql.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: |
-            8.0.x
-            10.0.302
-
-      - name: Validate requested version
-        shell: pwsh
+      - name: Pack TypedParameters.Dapper.SqlServer
         env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-        run: |
-          $version = $env:PACKAGE_VERSION
-          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
-            throw "package_version '$version' is not an allowed NuGet release version."
-          }
-
-      - name: Restore
-        run: dotnet restore Dapper.TypedParameters.sln
-
-      - name: Build
-        env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-        run: dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore "-p:PackageVersion=${PACKAGE_VERSION}"
-
-      - name: Pack
-        env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
         run: >
           dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
           --configuration Release
           --no-build
           --output artifacts/packages
+          "-p:Version=${PACKAGE_VERSION}"
           "-p:PackageVersion=${PACKAGE_VERSION}"
 
-      - name: Validate package compatibility
+      - name: Pack TypedParameters.Dapper.PostgreSql
         env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: >
+          dotnet pack src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj
+          --configuration Release
+          --no-build
+          --output artifacts/packages
+          "-p:Version=${PACKAGE_VERSION}"
+          "-p:PackageVersion=${PACKAGE_VERSION}"
+
+      - name: Validate SQL Server package compatibility
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
         run: >
           dotnet msbuild src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj
           -target:RunPackageValidation
           -property:Configuration=Release
           -property:NoBuild=true
+          "-property:Version=${PACKAGE_VERSION}"
           "-property:PackageVersion=${PACKAGE_VERSION}"
 
-      - name: Validate expected artifacts
+      - name: Validate PostgreSQL package compatibility
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: >
+          dotnet msbuild src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj
+          -target:RunPackageValidation
+          -property:Configuration=Release
+          -property:NoBuild=true
+          "-property:Version=${PACKAGE_VERSION}"
+          "-property:PackageVersion=${PACKAGE_VERSION}"
+
+      - name: Validate expected release artifacts
         shell: pwsh
         env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
         run: |
-          $version = $env:PACKAGE_VERSION
-          $package = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.nupkg"
-          $symbols = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.snupkg"
+          $ErrorActionPreference = "Stop"
+          $expectedArtifacts = @(
+            "TypedParameters.Dapper.SqlServer.$env:PACKAGE_VERSION.nupkg",
+            "TypedParameters.Dapper.SqlServer.$env:PACKAGE_VERSION.snupkg",
+            "TypedParameters.Dapper.PostgreSql.$env:PACKAGE_VERSION.nupkg",
+            "TypedParameters.Dapper.PostgreSql.$env:PACKAGE_VERSION.snupkg"
+          )
 
-          if (-not (Test-Path -LiteralPath $package)) {
-            throw "Expected package was not created: $package"
+          foreach ($artifact in $expectedArtifacts) {
+            $path = Join-Path "artifacts/packages" $artifact
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Expected package artifact was not created: $path"
+            }
           }
 
-          if (-not (Test-Path -LiteralPath $symbols)) {
-            throw "Expected symbol package was not created: $symbols"
-          }
-
-          $extraPackages = @(
+          $allArtifacts = @(
             Get-ChildItem -LiteralPath artifacts/packages -File -Filter *.nupkg
             Get-ChildItem -LiteralPath artifacts/packages -File -Filter *.snupkg
           )
-          if ($extraPackages.Count -ne 2) {
-            $names = $extraPackages.Name -join ', '
-            throw "Expected exactly one .nupkg and one .snupkg, found $($extraPackages.Count): $names"
+          if ($allArtifacts.Count -ne 4) {
+            $names = $allArtifacts.Name -join ', '
+            throw "Expected two .nupkg and two .snupkg artifacts, found $($allArtifacts.Count): $names"
           }
 
-      - name: Validate package contents
+      - name: Validate TypedParameters.Dapper.SqlServer package contents
         shell: pwsh
-        run: ./scripts/Test-PackageContents.ps1 -PackageDirectory artifacts/packages
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: >
+          ./scripts/Test-PackageContents.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.SqlServer
+          -AssemblyName Dapper.TypedParameters.SqlServer
+          -ExpectedVersion "$env:PACKAGE_VERSION"
 
-      - name: Validate package consumption
+      - name: Validate TypedParameters.Dapper.PostgreSql package contents
         shell: pwsh
-        run: ./scripts/Test-PackageConsumption.ps1 -PackageDirectory artifacts/packages
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: >
+          ./scripts/Test-PackageContents.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.PostgreSql
+          -AssemblyName Dapper.TypedParameters.PostgreSql
+          -ExpectedVersion "$env:PACKAGE_VERSION"
 
-      - name: Upload NuGet package
-        uses: actions/upload-artifact@v7
+      - name: Validate TypedParameters.Dapper.SqlServer package consumption
+        shell: pwsh
+        run: >
+          ./scripts/Test-PackageConsumption.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.SqlServer
+          -AssemblyName Dapper.TypedParameters.SqlServer
+
+      - name: Validate TypedParameters.Dapper.PostgreSql package consumption
+        shell: pwsh
+        run: >
+          ./scripts/Test-PackageConsumption.ps1
+          -PackageDirectory artifacts/packages
+          -PackageId TypedParameters.Dapper.PostgreSql
+          -AssemblyName Dapper.TypedParameters.PostgreSql
+
+      - name: Upload release packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: nuget-package-${{ inputs.package_version }}
-          path: artifacts/packages/TypedParameters.Dapper.SqlServer.${{ inputs.package_version }}.nupkg
+          name: release-packages
+          path: |
+            artifacts/packages/*.nupkg
+            artifacts/packages/*.snupkg
           if-no-files-found: error
+          retention-days: 7
 
-      - name: Upload symbol package
-        uses: actions/upload-artifact@v7
-        with:
-          name: nuget-symbol-package-${{ inputs.package_version }}
-          path: artifacts/packages/TypedParameters.Dapper.SqlServer.${{ inputs.package_version }}.snupkg
-          if-no-files-found: error
-
-  publish:
-    name: Publish to NuGet.org and GitHub Packages
+  ensure-release-tag:
+    name: Create release tag
+    needs: build-and-pack
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: package
-    if: ${{ inputs.publish }}
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout validated commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Create or verify tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.build-and-pack.outputs.release-tag }}
+          VALIDATED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [[ "$tag_sha" != "$VALIDATED_SHA" ]]; then
+              echo "::error::Tag '$RELEASE_TAG' points to $tag_sha instead of $VALIDATED_SHA."
+              exit 1
+            fi
+
+            echo "Tag '$RELEASE_TAG' already exists on the validated commit."
+            exit 0
+          fi
+
+          git tag "$RELEASE_TAG" "$VALIDATED_SHA"
+          git push origin "refs/tags/$RELEASE_TAG"
+
+  publish-nuget:
+    name: Publish to NuGet.org
+    needs:
+      - build-and-pack
+      - ensure-release-tag
+    runs-on: ubuntu-latest
     environment: nuget-release
     permissions:
       contents: read
       id-token: write
-      packages: write
 
     steps:
-      - name: Validate requested version
-        shell: pwsh
-        env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-        run: |
-          $version = $env:PACKAGE_VERSION
-          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z][0-9A-Za-z.-]*)?$') {
-            throw "package_version '$version' is not an allowed NuGet release version."
-          }
-
-      - name: Download NuGet package
-        uses: actions/download-artifact@v8
-        with:
-          name: nuget-package-${{ inputs.package_version }}
-          path: artifacts/packages
-
-      - name: Download symbol package
-        uses: actions/download-artifact@v8
-        with:
-          name: nuget-symbol-package-${{ inputs.package_version }}
-          path: artifacts/packages
-
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: |
             8.0.x
             10.0.302
 
-      - name: Verify release ref and artifacts
-        shell: pwsh
-        env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-        run: |
-          $version = $env:PACKAGE_VERSION
-          $expectedRef = "refs/tags/v$version"
+      - name: Download release packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-packages
+          path: artifacts/packages
 
-          if ($env:GITHUB_REF -ne $expectedRef) {
-            throw "Publishing requires ref '$expectedRef'. Current ref is '$env:GITHUB_REF'."
-          }
-
-          $package = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.nupkg"
-          $symbols = "artifacts/packages/TypedParameters.Dapper.SqlServer.$version.snupkg"
-
-          if (-not (Test-Path -LiteralPath $package)) {
-            throw "Validated package artifact was not downloaded: $package"
-          }
-
-          if (-not (Test-Path -LiteralPath $symbols)) {
-            throw "Validated symbol package artifact was not downloaded: $symbols"
-          }
-
-      - name: NuGet login
-        id: login
-        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841
+      - name: Exchange GitHub OIDC token for temporary NuGet API key
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: rodri-oliveira-dev
 
-      - name: Publish package to NuGet.org
+      - name: Publish TypedParameters.Dapper.SqlServer to NuGet.org
         env:
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-          TEMPORARY_NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
-        run: >
-          dotnet nuget push
-          "artifacts/packages/TypedParameters.Dapper.SqlServer.${PACKAGE_VERSION}.nupkg"
-          --api-key "${TEMPORARY_NUGET_API_KEY}"
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          PACKAGE_VERSION: ${{ needs.build-and-pack.outputs.package-version }}
+        run: >-
+          dotnet nuget push "artifacts/packages/TypedParameters.Dapper.SqlServer.$PACKAGE_VERSION.nupkg"
           --source https://api.nuget.org/v3/index.json
+          --api-key "$NUGET_API_KEY"
           --skip-duplicate
 
-      - name: Configure GitHub Packages source
+      - name: Publish TypedParameters.Dapper.PostgreSql to NuGet.org
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: >
-          dotnet nuget add source
-          --username "${{ github.actor }}"
-          --password "${GITHUB_TOKEN}"
-          --store-password-in-clear-text
-          --name github
-          "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-
-      - name: Publish package to GitHub Packages
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          PACKAGE_VERSION: ${{ inputs.package_version }}
-        run: >
-          dotnet nuget push
-          "artifacts/packages/TypedParameters.Dapper.SqlServer.${PACKAGE_VERSION}.nupkg"
-          --api-key "${GITHUB_TOKEN}"
-          --source github
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          PACKAGE_VERSION: ${{ needs.build-and-pack.outputs.package-version }}
+        run: >-
+          dotnet nuget push "artifacts/packages/TypedParameters.Dapper.PostgreSql.$PACKAGE_VERSION.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key "$NUGET_API_KEY"
           --skip-duplicate
+
+  publish-github-packages:
+    name: Publish to GitHub Packages
+    needs:
+      - build-and-pack
+      - ensure-release-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+          dotnet-version: 8.0.x
+
+      - name: Download release packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-packages
+          path: artifacts/packages
+
+      - name: Publish TypedParameters.Dapper.SqlServer to GitHub Packages
+        env:
+          GITHUB_PACKAGE_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          GITHUB_PACKAGE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ needs.build-and-pack.outputs.package-version }}
+        run: >-
+          dotnet nuget push "artifacts/packages/TypedParameters.Dapper.SqlServer.$PACKAGE_VERSION.nupkg"
+          --source "$GITHUB_PACKAGE_SOURCE"
+          --api-key "$GITHUB_PACKAGE_TOKEN"
+          --skip-duplicate
+
+      - name: Publish TypedParameters.Dapper.PostgreSql to GitHub Packages
+        env:
+          GITHUB_PACKAGE_SOURCE: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          GITHUB_PACKAGE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ needs.build-and-pack.outputs.package-version }}
+        run: >-
+          dotnet nuget push "artifacts/packages/TypedParameters.Dapper.PostgreSql.$PACKAGE_VERSION.nupkg"
+          --source "$GITHUB_PACKAGE_SOURCE"
+          --api-key "$GITHUB_PACKAGE_TOKEN"
+          --skip-duplicate
+
+  github-release:
+    name: Create GitHub Release
+    needs:
+      - build-and-pack
+      - ensure-release-tag
+      - publish-nuget
+      - publish-github-packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-packages
+          path: artifacts/packages
+
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.build-and-pack.outputs.release-tag }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "GitHub Release '$RELEASE_TAG' already exists; refreshing package artifacts."
+            gh release upload "$RELEASE_TAG" \
+              artifacts/packages/*.nupkg \
+              artifacts/packages/*.snupkg \
+              --repo "$GH_REPO" \
+              --clobber
+            exit 0
+          fi
+
+          release_args=(--verify-tag --generate-notes --title "$RELEASE_TAG")
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            release_args+=(--prerelease)
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            artifacts/packages/*.nupkg \
+            artifacts/packages/*.snupkg \
+            --repo "$GH_REPO" \
+            "${release_args[@]}"

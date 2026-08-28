@@ -2,10 +2,13 @@
 
 ## Objetivo do repositorio
 
-Este repositorio contem uma biblioteca publica .NET para criacao explicita de parametros SQL Server no Dapper.
+Este repositorio contem bibliotecas publicas .NET para criacao explicita de parametros de bancos relacionais no Dapper, organizadas por provider.
 
-- Provider inicial exclusivo: `Microsoft.Data.SqlClient`.
-- Pacote NuGet: `TypedParameters.Dapper.SqlServer`.
+- Provider SQL Server: `Microsoft.Data.SqlClient`.
+- Provider PostgreSQL: `Npgsql`.
+- Pacotes NuGet:
+  - `TypedParameters.Dapper.SqlServer`
+  - `TypedParameters.Dapper.PostgreSql`
 - A API publica deve permanecer pequena, explicita e previsivel.
 - A biblioteca deve considerar compatibilidade futura com `net8.0` e `net10.0`.
 
@@ -35,8 +38,12 @@ Consulte somente os arquivos aplicaveis ao escopo da tarefa atual:
 - Nao exponha tipos internos desnecessariamente.
 - Nao use reflection ou introspeccao de schema sem requisito explicito.
 - Nao faca consultas adicionais ao banco.
-- Nao dependa de permissoes adicionais no SQL Server.
-- Use somente `Microsoft.Data.SqlClient`; nao adicione `System.Data.SqlClient`.
+- Nao dependa de permissoes adicionais no banco de dados.
+- Use `Microsoft.Data.SqlClient` somente no provider SQL Server.
+- Use `Npgsql` somente no provider PostgreSQL.
+- Nao adicione `System.Data.SqlClient`.
+- Nao crie referencias cruzadas entre providers sem decisao arquitetural explicita.
+- Nao crie abstracao compartilhada entre providers apenas para reduzir duplicacao.
 - Preserve Central Package Management. Nao adicione `Version=` em `PackageReference`.
 - Nao altere testes apenas para faze-los passar.
 - Nao publique pacote, release, tag ou push sem pedido explicito.
@@ -73,6 +80,6 @@ Enquanto o projeto ainda nao estiver multi-target para .NET 8 e .NET 10, nao exi
 - `repository-governance-sdd`: governanca do repositorio, `AGENTS.md`, ADRs, prompts e skills. Caminho: `.agents/skills/repository-governance-sdd/SKILL.md`.
 - `ci-release-governance`: GitHub Actions, validacoes de CI, release governance e empacotamento sem publicacao. Caminho: `.agents/skills/ci-release-governance/SKILL.md`.
 - `coverage-analysis`: analise de cobertura, hotspots e gaps de risco em testes .NET. Caminho: `.agents/skills/coverage-analysis/SKILL.md`.
-- `dotnet-library-change`: alteracoes de codigo, API publica, compatibilidade, testes e empacotamento da biblioteca. Caminho: `.agents/skills/dotnet-library-change/SKILL.md`.
+- `dotnet-library-change`: alteracoes de codigo, API publica, compatibilidade, testes e empacotamento das bibliotecas. Caminho: `.agents/skills/dotnet-library-change/SKILL.md`.
 
 Antes de executar uma tarefa especializada, selecione apenas as skills cujo `description` corresponda ao pedido. As regras deste arquivo prevalecem em caso de conflito.

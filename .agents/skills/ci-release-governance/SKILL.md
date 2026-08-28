@@ -43,13 +43,14 @@ Esta skill concentra regras de GitHub Actions, validacoes locais, artifacts e pa
 2. Consulte `AGENTS.md`, `README.md`, `docs/decisions/`, `Directory.Build.props`, `Directory.Packages.props` e workflows afetados.
 3. Compare o comportamento documentado com o comportamento configurado.
 4. Preserve comandos oficiais e Central Package Management.
-5. Mantenha permissoes de workflow no minimo necessario.
-6. Evite triggers amplos, jobs caros ou artifacts persistentes sem necessidade comprovada.
-7. Nunca transforme `dotnet pack` em publicacao de pacote sem pedido explicito.
-8. Atualize documentacao quando mudar fluxo oficial, requisito local, release, validacao ou estrategia de empacotamento.
-9. Valide sintaxe e consistencia dos arquivos alterados.
-10. Revise diff e confirme que nao houve alteracao de API publica, codigo de producao ou testes fora do escopo.
-11. Relate impacto, validacoes e riscos.
+5. Trate pacotes de providers como artefatos independentes quando revisar pack, validacao ou release.
+6. Mantenha permissoes de workflow no minimo necessario.
+7. Evite triggers amplos, jobs caros ou artifacts persistentes sem necessidade comprovada.
+8. Nunca transforme `dotnet pack` em publicacao de pacote sem pedido explicito.
+9. Atualize documentacao quando mudar fluxo oficial, requisito local, release, validacao ou estrategia de empacotamento.
+10. Valide sintaxe e consistencia dos arquivos alterados.
+11. Revise diff e confirme que nao houve alteracao de API publica, codigo de producao ou testes fora do escopo.
+12. Relate impacto, validacoes e riscos.
 
 # Comandos recomendados
 
@@ -58,11 +59,13 @@ dotnet restore Dapper.TypedParameters.sln
 dotnet build Dapper.TypedParameters.sln --configuration Release --no-restore
 dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
+dotnet pack src/Dapper.TypedParameters.PostgreSql/Dapper.TypedParameters.PostgreSql.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
 # Restricoes
 
-- Nao executar publish, deploy, release real, tag ou push.
+- Nao executar publish, deploy, release real ou tag sem pedido explicito.
+- Nao fazer push sem pedido explicito.
 - Nao criar branch sem pedido explicito.
 - Nao ampliar permissoes de workflow sem justificativa clara.
 - Nao remover validacoes para contornar falha.

@@ -1,32 +1,32 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
-    <AssemblyName>Dapper.TypedParameters.SqlServer</AssemblyName>
-    <RootNamespace>Dapper.TypedParameters.SqlServer</RootNamespace>
-    <PackageId>TypedParameters.Dapper.SqlServer</PackageId>
-    <Title>Typed Parameters for Dapper - SQL Server</Title>
-    <Description>Explicit, strongly typed SQL Server parameters for Dapper using Microsoft.Data.SqlClient. Control SqlDbType, size, precision, scale, direction, and table-valued parameter metadata at the call site so parameter contracts remain visible and predictable.</Description>
-    <PackageTags>dapper;sql-server;mssql;microsoft-data-sqlclient;sqlclient;ado.net;parameters;typed-parameters;sql-parameters;table-valued-parameters;tvp;micro-orm;dotnet</PackageTags>
+    <AssemblyName>Dapper.TypedParameters.PostgreSql</AssemblyName>
+    <RootNamespace>Dapper.TypedParameters.PostgreSql</RootNamespace>
+    <PackageId>TypedParameters.Dapper.PostgreSql</PackageId>
+    <Title>Typed Parameters for Dapper - PostgreSQL</Title>
+    <Description>Explicitly typed PostgreSQL parameters for Dapper using Npgsql. Declare NpgsqlDbType metadata at the call site, including PostgreSQL scalar types, JSON/JSONB, temporal types, and arrays, so parameter contracts remain visible and predictable.</Description>
+    <PackageTags>dapper;postgresql;postgres;npgsql;ado.net;parameters;typed-parameters;sql-parameters;jsonb;postgresql-arrays;micro-orm;dotnet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rodri-oliveira-dev/Dapper.TypedParameters</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>nuget-icon.png</PackageIcon>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>preview.1</VersionSuffix>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageValidationBaselineVersion>1.0.0-rc.1</PackageValidationBaselineVersion>
     <EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>
     <EnableStrictModeForCompatibleFrameworksInPackage>true</EnableStrictModeForCompatibleFrameworksInPackage>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" />
-    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Npgsql" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>

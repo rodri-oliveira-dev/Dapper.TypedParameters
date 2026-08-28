@@ -4,8 +4,9 @@ English | [Português (Brasil)](getting-started.pt-BR.md)
 
 [Back to README](../README.md) | [Motivation](motivation.md)
 
-This guide shows the basic Dapper patterns with
-`Dapper.TypedParameters.SqlServer` 1.0.0.
+This guide shows the basic Dapper patterns with the SQL Server provider,
+`Dapper.TypedParameters.SqlServer` 1.0.0. For PostgreSQL, see the
+[PostgreSQL provider guide](postgresql.md).
 
 ## Prerequisites
 
@@ -144,6 +145,7 @@ var invoice = await connection.QuerySingleAsync<Invoice>(
 
 ## Specialized Examples
 
+- [PostgreSQL provider guide](postgresql.md)
 - [Strings](examples/strings.md)
 - [Numeric](examples/numeric.md)
 - [Binary and identifiers](examples/binary.md)
