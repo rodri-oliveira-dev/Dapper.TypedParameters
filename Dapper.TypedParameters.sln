@@ -8,6 +8,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.SqlS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.SqlServer.IntegrationTests", "tests\Dapper.TypedParameters.SqlServer.IntegrationTests\Dapper.TypedParameters.SqlServer.IntegrationTests.csproj", "{1E786A5A-0A53-4419-99F5-D75828B8294E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.PostgreSql", "src\Dapper.TypedParameters.PostgreSql\Dapper.TypedParameters.PostgreSql.csproj", "{1991C5D2-5073-48DB-87EA-D760303CC549}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.PostgreSql.Tests", "tests\Dapper.TypedParameters.PostgreSql.Tests\Dapper.TypedParameters.PostgreSql.Tests.csproj", "{FD0ADA1D-955B-4F75-894C-B4BDD87631EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dapper.TypedParameters.PostgreSql.IntegrationTests", "tests\Dapper.TypedParameters.PostgreSql.IntegrationTests\Dapper.TypedParameters.PostgreSql.IntegrationTests.csproj", "{2E6C9E1E-D479-4A07-A455-92CFBB21742F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,5 +32,17 @@ Global
 		{1E786A5A-0A53-4419-99F5-D75828B8294E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E786A5A-0A53-4419-99F5-D75828B8294E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E786A5A-0A53-4419-99F5-D75828B8294E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1991C5D2-5073-48DB-87EA-D760303CC549}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1991C5D2-5073-48DB-87EA-D760303CC549}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1991C5D2-5073-48DB-87EA-D760303CC549}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1991C5D2-5073-48DB-87EA-D760303CC549}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD0ADA1D-955B-4F75-894C-B4BDD87631EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD0ADA1D-955B-4F75-894C-B4BDD87631EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD0ADA1D-955B-4F75-894C-B4BDD87631EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD0ADA1D-955B-4F75-894C-B4BDD87631EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E6C9E1E-D479-4A07-A455-92CFBB21742F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E6C9E1E-D479-4A07-A455-92CFBB21742F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E6C9E1E-D479-4A07-A455-92CFBB21742F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E6C9E1E-D479-4A07-A455-92CFBB21742F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

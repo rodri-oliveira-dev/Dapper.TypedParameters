@@ -6,8 +6,17 @@
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=rodri-oliveira-dev_Dapper.TypedParameters&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=rodri-oliveira-dev_Dapper.TypedParameters)
 [![CI](https://github.com/rodri-oliveira-dev/Dapper.TypedParameters/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rodri-oliveira-dev/Dapper.TypedParameters)
 
+`Dapper.TypedParameters` hospeda pacotes específicos por provider para metadados
+explícitos de parâmetros de banco de dados no Dapper.
+
+Pacotes disponíveis:
+
+- `TypedParameters.Dapper.SqlServer`
+- `TypedParameters.Dapper.PostgreSql` (fundação estrutural; factories públicas
+  ainda não implementadas)
+
 `Dapper.TypedParameters.SqlServer` fornece metadados explícitos de parâmetros SQL
-Server para Dapper usando `Microsoft.Data.SqlClient`.
+Server usando `Microsoft.Data.SqlClient`.
 
 Use quando o contrato do banco é conhecido e o tipo SQL Server, tamanho,
 precisão, escala, direção ou nome do table-valued parameter deve ficar visível
@@ -122,8 +131,9 @@ sensíveis a performance no seu próprio workload.
 | Target frameworks | `net8.0`; `net10.0` |
 | Dapper | `2.1.79` |
 | Microsoft.Data.SqlClient | `6.1.6` |
-| Provider ADO.NET | Somente `Microsoft.Data.SqlClient` |
-| System.Data.SqlClient | Não suportado |
+| Npgsql | `10.0.3` |
+| Providers ADO.NET | `Microsoft.Data.SqlClient` para SQL Server; `Npgsql` para PostgreSQL |
+| System.Data.SqlClient | Não suportado pelo provider SQL Server |
 | Compatibilidade declarada do driver SQL Server | SQL Server 2016 até SQL Server 2025 |
 | SQL Server testado na CI | `mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04` |
 | Azure SQL Database | Compatível pelo driver; não testado por integração neste repositório |
@@ -149,18 +159,19 @@ integração apenas na imagem SQL Server 2022 listada acima.
 
 ## Princípios de Design
 
-- Tornar metadados de parâmetros SQL Server explícitos no ponto de chamada.
+- Tornar metadados de parâmetros provider-specific explícitos no ponto de chamada.
 - Manter a API pública pequena e previsível.
-- Usar `Microsoft.Data.SqlClient` diretamente.
+- Usar os tipos ADO.NET do provider diretamente.
 - Preservar os padrões normais de chamada do Dapper.
 - Preferir factory methods explícitos em vez de seleção automática de tipo SQL.
+- Evitar abstrações cross-provider até que responsabilidades idênticas sejam comprovadas.
 
 ## O Que Esta Biblioteca Não Faz
 
 A biblioteca não:
 
 - inspeciona o schema do banco;
-- consulta o SQL Server para obter metadados;
+- consulta o banco para obter metadados;
 - reescreve SQL;
 - analisa planos de execução;
 - detecta `CONVERT_IMPLICIT`;
@@ -171,7 +182,7 @@ A biblioteca não:
 
 ## Testes e Qualidade
 
-O repositório valida testes unitários, testes de integração com SQL Server,
+O repositório valida testes unitários, testes de integração por provider,
 conteúdo do pacote, consumo do pacote, baselines de API pública, SourceLink,
 package validation e Quality Gate do SonarQube Cloud para os target frameworks
 suportados.
@@ -185,7 +196,9 @@ dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
-Os testes de integração usam SQL Server via Docker e `Testcontainers.MsSql`.
+Os testes de integração SQL Server usam Docker e `Testcontainers.MsSql`. Os
+testes de integração PostgreSQL usarão `Testcontainers.PostgreSql` quando a API
+funcional for implementada.
 
 ## Registros de Release
 
