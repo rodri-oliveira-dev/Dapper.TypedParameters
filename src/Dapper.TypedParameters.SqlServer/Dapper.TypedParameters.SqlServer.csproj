@@ -32,7 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
-    <None Include="../../resource/nuget-icon.png" Pack="true" PackagePath="/" />
+    <None Remove="README.md" />
+    <None Remove="resources/nuget-icon.png" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="resources/nuget-icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>

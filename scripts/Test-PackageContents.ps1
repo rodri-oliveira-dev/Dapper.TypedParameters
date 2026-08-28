@@ -193,6 +193,7 @@ try {
     }
 
     Assert-EntryExists $entries "README.md"
+    Assert-EntryExists $entries "nuget-icon.png"
     Test-NoForbiddenEntries $entries $packageProfile.ForbiddenAssemblyNames
     Test-NoForbiddenEntries $symbolEntries $packageProfile.ForbiddenAssemblyNames
     Test-NoObviousSecrets $packageRoot $entries
@@ -208,10 +209,14 @@ try {
     Assert-True ($metadata.license.type -eq 'expression') "License expression metadata was not found."
     Assert-True ($metadata.license.'#text' -eq 'MIT') "MIT license expression was not found."
     Assert-True ($metadata.readme -eq 'README.md') "README metadata was not found."
-    if (-not [string]::IsNullOrWhiteSpace($metadata.icon)) {
-        Assert-EntryExists $entries $metadata.icon
-    }
+    Assert-True ($metadata.icon -eq 'nuget-icon.png') "Package icon metadata was not found."
     Assert-True ($metadata.repository.url -eq $RepositoryUrl) "Repository URL metadata was not found."
+
+    $readmeContent = Get-Content -Raw -LiteralPath (Join-Path $packageRoot "README.md")
+    Assert-True ($readmeContent.Contains($packageProfile.ExpectedReadmeHeading)) `
+        "Package README does not contain expected heading '$($packageProfile.ExpectedReadmeHeading)'."
+    Assert-True (-not $readmeContent.Contains($packageProfile.ForbiddenReadmeHeading)) `
+        "Package README contains provider heading '$($packageProfile.ForbiddenReadmeHeading)'."
 
     $dependencyIds = @($metadata.dependencies.group.dependency | ForEach-Object { $_.id })
     foreach ($dependencyId in $packageProfile.ExpectedDependencies) {

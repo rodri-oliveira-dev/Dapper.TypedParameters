@@ -58,6 +58,8 @@ function Get-PackageProfile {
         "TypedParameters.Dapper.SqlServer" = [pscustomobject]@{
             PackageId = "TypedParameters.Dapper.SqlServer"
             AssemblyName = "Dapper.TypedParameters.SqlServer"
+            ExpectedReadmeHeading = "# TypedParameters.Dapper.SqlServer"
+            ForbiddenReadmeHeading = "# TypedParameters.Dapper.PostgreSql"
             ExpectedDependencies = @("Dapper", "Microsoft.Data.SqlClient")
             ForbiddenDependencies = @("Npgsql", "TypedParameters.Dapper.PostgreSql")
             ForbiddenAssemblyNames = @("Dapper.TypedParameters.PostgreSql")
@@ -65,6 +67,8 @@ function Get-PackageProfile {
         "TypedParameters.Dapper.PostgreSql" = [pscustomobject]@{
             PackageId = "TypedParameters.Dapper.PostgreSql"
             AssemblyName = "Dapper.TypedParameters.PostgreSql"
+            ExpectedReadmeHeading = "# TypedParameters.Dapper.PostgreSql"
+            ForbiddenReadmeHeading = "# TypedParameters.Dapper.SqlServer"
             ExpectedDependencies = @("Dapper", "Npgsql")
             ForbiddenDependencies = @("Microsoft.Data.SqlClient", "TypedParameters.Dapper.SqlServer")
             ForbiddenAssemblyNames = @("Dapper.TypedParameters.SqlServer")

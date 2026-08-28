@@ -5,8 +5,8 @@
     <RootNamespace>Dapper.TypedParameters.PostgreSql</RootNamespace>
     <PackageId>TypedParameters.Dapper.PostgreSql</PackageId>
     <Title>Typed Parameters for Dapper - PostgreSQL</Title>
-    <Description>Explicit, strongly typed PostgreSQL parameters for Dapper using Npgsql. Control PostgreSQL provider metadata at the call site so parameter contracts remain visible and predictable.</Description>
-    <PackageTags>dapper;postgresql;postgres;npgsql;ado.net;parameters;typed-parameters;sql-parameters;micro-orm;dotnet</PackageTags>
+    <Description>Explicitly typed PostgreSQL parameters for Dapper using Npgsql. Declare NpgsqlDbType metadata at the call site, including PostgreSQL scalar types, JSON/JSONB, temporal types, and arrays, so parameter contracts remain visible and predictable.</Description>
+    <PackageTags>dapper;postgresql;postgres;npgsql;ado.net;parameters;typed-parameters;sql-parameters;jsonb;postgresql-arrays;micro-orm;dotnet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rodri-oliveira-dev/Dapper.TypedParameters</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -32,7 +32,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
-    <None Include="../../resource/nuget-icon.png" Pack="true" PackagePath="/" />
+    <None Remove="README.md" />
+    <None Remove="resources/nuget-icon.png" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="resources/nuget-icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
