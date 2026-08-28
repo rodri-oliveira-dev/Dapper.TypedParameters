@@ -58,6 +58,9 @@ public sealed class TypedPostgresParameter : SqlMapper.ICustomQueryParameter
         parameter.Value = Value ?? DBNull.Value;
         parameter.NpgsqlDbType = NpgsqlDbType;
         parameter.Direction = ParameterDirection.Input;
+        parameter.Size = 0;
+        parameter.Precision = 0;
+        parameter.Scale = 0;
     }
 
     private static NpgsqlParameter GetOrCreateParameter(

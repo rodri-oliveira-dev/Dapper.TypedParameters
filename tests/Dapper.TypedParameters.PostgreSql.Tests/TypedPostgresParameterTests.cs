@@ -173,6 +173,27 @@ public sealed class TypedPostgresParameterTests
     }
 
     [Fact]
+    public void AddParameter_resets_unsupported_scalar_metadata_when_reusing_parameter()
+    {
+        var typedParameter = PostgresParam.VarChar("longer");
+        using var command = new NpgsqlCommand();
+        var existing = command.Parameters.Add("Value", NpgsqlDbType.Varchar);
+        existing.Size = 3;
+        existing.Precision = 10;
+        existing.Scale = 2;
+
+        typedParameter.AddParameter(command, "Value");
+
+        var parameter = Assert.Single(command.Parameters.Cast<NpgsqlParameter>());
+        Assert.Same(existing, parameter);
+        Assert.Equal("longer", parameter.Value);
+        Assert.Equal(NpgsqlDbType.Varchar, parameter.NpgsqlDbType);
+        Assert.Equal(0, parameter.Size);
+        Assert.Equal(0, parameter.Precision);
+        Assert.Equal(0, parameter.Scale);
+    }
+
+    [Fact]
     public void AddParameter_rejects_null_command()
     {
         var typedParameter = PostgresParam.Text("value");

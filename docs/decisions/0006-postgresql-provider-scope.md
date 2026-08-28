@@ -66,6 +66,12 @@ without provider rounding, truncation, or server validation. Precision and
 scale are not exposed until a future use case can describe their effect without
 implying PostgreSQL `numeric(p, s)` typmod semantics.
 
+When a typed PostgreSQL parameter reuses an existing `NpgsqlParameter`, the
+library overwrites the provider metadata declared by the current typed
+parameter and resets scalar metadata that is not part of the PostgreSQL public
+contract, such as `Size`, `Precision`, and `Scale`, to the provider default
+value `0`.
+
 `Json(string? value)` and `Jsonb(string? value)` accept caller-provided JSON
 text only. The provider does not serialize POCOs, use `JsonSerializer`, handle
 `JsonDocument` specially, or configure global Npgsql JSON mapping.
