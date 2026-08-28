@@ -1,1 +1,16 @@
 #nullable enable
+Dapper.TypedParameters.PostgreSql.PostgresParam
+Dapper.TypedParameters.PostgreSql.TypedPostgresParameter
+Dapper.TypedParameters.PostgreSql.TypedPostgresParameter.AddParameter(System.Data.IDbCommand! command, string! name) -> void
+Dapper.TypedParameters.PostgreSql.TypedPostgresParameter.NpgsqlDbType.get -> NpgsqlTypes.NpgsqlDbType
+Dapper.TypedParameters.PostgreSql.TypedPostgresParameter.Value.get -> object?
+static Dapper.TypedParameters.PostgreSql.PostgresParam.BigInt(long? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Boolean(bool? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Bytea(byte[]? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Double(double? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Integer(int? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Money(decimal? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Real(float? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.SmallInt(short? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Text(string? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!
+static Dapper.TypedParameters.PostgreSql.PostgresParam.Uuid(System.Guid? value) -> Dapper.TypedParameters.PostgreSql.TypedPostgresParameter!

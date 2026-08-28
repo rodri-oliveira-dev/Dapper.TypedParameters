@@ -12,15 +12,20 @@ parameter metadata in Dapper.
 Available packages:
 
 - `TypedParameters.Dapper.SqlServer`
-- `TypedParameters.Dapper.PostgreSql` (foundation scaffold; public factories are
-  not implemented yet)
+- `TypedParameters.Dapper.PostgreSql` (preview)
 
 `Dapper.TypedParameters.SqlServer` provides explicit SQL Server parameter
 metadata using `Microsoft.Data.SqlClient`.
 
-Use it when the database contract is known and the SQL Server parameter type,
-size, precision, scale, direction, or table-valued parameter type name should be
-visible at the call site.
+`Dapper.TypedParameters.PostgreSql` provides explicit PostgreSQL parameter
+metadata using `Npgsql`.
+
+Use the SQL Server provider when the database contract is known and the SQL
+Server parameter type, size, precision, scale, direction, or table-valued
+parameter type name should be visible at the call site.
+
+Use the PostgreSQL provider when the database contract is known and the
+PostgreSQL parameter type should be sent as explicit `NpgsqlDbType` metadata.
 
 ## Installation
 
@@ -28,6 +33,12 @@ Install the latest stable package from NuGet.org:
 
 ```bash
 dotnet add package TypedParameters.Dapper.SqlServer
+```
+
+For PostgreSQL:
+
+```bash
+dotnet add package TypedParameters.Dapper.PostgreSql --prerelease
 ```
 
 Official package page:
@@ -72,6 +83,27 @@ var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
 .NET string
   -> explicit SQL metadata
   -> SQL Server varchar(11) parameter
+```
+
+PostgreSQL preview example:
+
+```csharp
+using Dapper;
+using Dapper.TypedParameters.PostgreSql;
+using Npgsql;
+
+await using var connection = new NpgsqlConnection(connectionString);
+
+var customer = await connection.QuerySingleOrDefaultAsync<Customer>(
+    """
+    SELECT id, name
+    FROM customers
+    WHERE id = @Id;
+    """,
+    new
+    {
+        Id = PostgresParam.Uuid(id)
+    });
 ```
 
 ## Why?
@@ -122,6 +154,14 @@ queries in your own workload.
 | Temporal | `date`, `time`, `datetime`, `smalldatetime`, `datetime2`, `datetimeoffset` |
 | Output parameters | `AsOutput()`, `AsInputOutput()`, `OutputValue`, `GetValue<T>()` |
 | Table-valued parameters | `SqlDbType.Structured` with explicit `TypeName` and caller-provided `DataTable` |
+
+Initial PostgreSQL preview support:
+
+| Family | PostgreSQL types |
+| --- | --- |
+| Strings | `text` |
+| Numeric | `boolean`, `smallint`, `integer`, `bigint`, `real`, `double precision`, `money` |
+| Binary and identifiers | `uuid`, `bytea` |
 
 ## Compatibility
 
@@ -195,9 +235,9 @@ dotnet test Dapper.TypedParameters.sln --configuration Release --no-build
 dotnet pack src/Dapper.TypedParameters.SqlServer/Dapper.TypedParameters.SqlServer.csproj --configuration Release --no-build --output artifacts/packages
 ```
 
-SQL Server integration tests use Docker and `Testcontainers.MsSql`. PostgreSQL
-integration tests will use `Testcontainers.PostgreSql` when the functional API is
-implemented.
+SQL Server integration tests use Docker and `Testcontainers.MsSql`. The
+PostgreSQL integration test project is present for provider behavior that needs
+a real database in later phases.
 
 ## Release Registries
 
