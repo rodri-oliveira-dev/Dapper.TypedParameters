@@ -19,7 +19,7 @@ concurrency:
 jobs:
   build-and-pack:
     name: Validate, build, test and pack
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     timeout-minutes: 45
     permissions:
       contents: read
@@ -299,7 +299,7 @@ jobs:
   ensure-release-tag:
     name: Create release tag
     needs: build-and-pack
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     permissions:
       contents: write
 
@@ -337,7 +337,7 @@ jobs:
     needs:
       - build-and-pack
       - ensure-release-tag
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     environment: nuget-release
     permissions:
       contents: read
@@ -388,7 +388,7 @@ jobs:
     needs:
       - build-and-pack
       - ensure-release-tag
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     permissions:
       contents: read
       packages: write
@@ -438,7 +438,7 @@ jobs:
       - ensure-release-tag
       - publish-nuget
       - publish-github-packages
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_OS || 'ubuntu-26.04' }}
     permissions:
       contents: write
 
