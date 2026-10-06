@@ -174,14 +174,23 @@ jobs:
       - name: Restore
         run: dotnet restore Dapper.TypedParameters.sln
 
+      - name: Resolve Sonar project version
+        id: sonar-version
+        shell: bash
+        run: |
+          version="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo 'v0.0.0-dev')"
+          echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+
       - name: Begin Sonar analysis
         shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_VERSION: ${{ steps.sonar-version.outputs.version }}
         run: >
           dotnet sonarscanner begin
           /k:"rodri-oliveira-dev_Dapper.TypedParameters"
           /o:"rodri-oliveira-dev"
+          /v:"${SONAR_PROJECT_VERSION}"
           /d:sonar.token="${SONAR_TOKEN}"
           /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/sonar/opencover/sqlserver-unit.opencover.xml,artifacts/coverage/sonar/opencover/postgresql-unit.opencover.xml,artifacts/coverage/sonar/opencover/sqlserver-integration.opencover.xml,artifacts/coverage/sonar/opencover/postgresql-integration.opencover.xml"
           /d:sonar.qualitygate.wait=true
