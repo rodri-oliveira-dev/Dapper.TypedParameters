@@ -179,9 +179,20 @@ jobs:
       - name: Resolve Sonar project version
         id: sonar-version
         shell: bash
+        env:
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          version="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo 'v0.0.0-dev')"
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            version="$GITHUB_REF_NAME"
+          else
+            version="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo 'v0.0.0-dev')"
+          fi
+
           echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+          echo "Sonar project version: ${version#v}"
 
       - name: Begin Sonar analysis
         shell: bash
