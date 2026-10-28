@@ -38,7 +38,7 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            10.0.302
+            10.0.403
 
       - name: Validate release ref and version
         id: version
@@ -349,7 +349,7 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            10.0.302
+            10.0.403
 
       - name: Download release packages
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
